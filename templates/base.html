@@ -32,6 +32,25 @@
             --radius-lg: 24px;
             --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             --glass: rgba(255,255,255,0.03);
+            --bg-gradient-1: rgba(102,126,234,0.08);
+            --bg-gradient-2: rgba(118,75,162,0.06);
+        }
+
+        /* ===== СВЕТЛАЯ ТЕМА ===== */
+        body.light {
+            --bg-primary: #f0f2f8;
+            --bg-secondary: #ffffff;
+            --bg-card: rgba(255,255,255,0.8);
+            --bg-card-hover: rgba(255,255,255,0.95);
+            --text-primary: #1a1a2e;
+            --text-secondary: #4a4a6a;
+            --text-muted: #8a8aaa;
+            --border-color: rgba(0,0,0,0.08);
+            --input-bg: rgba(0,0,0,0.04);
+            --shadow: 0 8px 32px rgba(0,0,0,0.08);
+            --shadow-hover: 0 12px 48px rgba(102,126,234,0.12);
+            --bg-gradient-1: rgba(102,126,234,0.04);
+            --bg-gradient-2: rgba(118,75,162,0.03);
         }
 
         body {
@@ -39,15 +58,15 @@
             background: var(--bg-primary);
             color: var(--text-primary);
             min-height: 100vh;
-            transition: background 0.3s;
+            transition: background 0.4s ease, color 0.4s ease;
             padding-bottom: 80px;
-            background-image: radial-gradient(ellipse at 20% 50%, rgba(102,126,234,0.08) 0%, transparent 60%),
-                              radial-gradient(ellipse at 80% 20%, rgba(118,75,162,0.06) 0%, transparent 50%);
+            background-image: radial-gradient(ellipse at 20% 50%, var(--bg-gradient-1) 0%, transparent 60%),
+                              radial-gradient(ellipse at 80% 20%, var(--bg-gradient-2) 0%, transparent 50%);
         }
 
         /* ===== ШАПКА ===== */
         .app-header {
-            background: rgba(13,13,26,0.85);
+            background: var(--bg-card);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
             border-bottom: 1px solid var(--border-color);
@@ -58,6 +77,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            transition: background 0.4s ease, border-color 0.4s ease;
         }
 
         .logo h1 {
@@ -96,7 +116,7 @@
 
         .header-actions .nav-link:hover {
             color: var(--text-primary);
-            background: var(--bg-card);
+            background: var(--bg-card-hover);
         }
 
         .header-actions .nav-link.active {
@@ -517,6 +537,38 @@
             font-size: 0.8rem;
         }
 
+        /* ===== ПЕРЕКЛЮЧАТЕЛЬ ТЕМЫ ===== */
+        .theme-toggle-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-top: 4px;
+        }
+
+        .theme-btn {
+            padding: 8px 20px;
+            border-radius: 30px;
+            border: 2px solid var(--border-color);
+            background: transparent;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: var(--transition);
+            font-family: inherit;
+        }
+
+        .theme-btn:hover {
+            border-color: var(--accent-primary);
+            color: var(--text-primary);
+        }
+
+        .theme-btn.active {
+            border-color: var(--accent-primary);
+            background: var(--accent-gradient);
+            color: white;
+        }
+
         /* ===== АУТЕНТИФИКАЦИЯ ===== */
         .auth-container {
             display: flex;
@@ -644,7 +696,7 @@
             bottom: 0;
             left: 0;
             right: 0;
-            background: rgba(13,13,26,0.92);
+            background: var(--bg-card);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
             display: flex;
@@ -652,6 +704,7 @@
             padding: 6px 12px 14px 12px;
             border-top: 1px solid var(--border-color);
             z-index: 100;
+            transition: background 0.4s ease, border-color 0.4s ease;
         }
 
         .bottom-nav .nav-item {
@@ -785,6 +838,10 @@
                 width: 64px;
                 height: 64px;
             }
+            .theme-btn {
+                font-size: 0.75rem;
+                padding: 6px 14px;
+            }
         }
 
         @media (max-width: 400px) {
@@ -820,6 +877,10 @@
             .ticket-desc {
                 font-size: 0.75rem;
                 padding: 10px;
+            }
+            .theme-btn {
+                font-size: 0.7rem;
+                padding: 4px 10px;
             }
         }
 
@@ -915,6 +976,32 @@
                 input.type = 'password';
                 btn.textContent = '👁️';
             }
+        }
+
+        // ===== УПРАВЛЕНИЕ ТЕМОЙ =====
+        function setTheme(theme) {
+            if (theme === 'light') {
+                document.body.classList.add('light');
+                localStorage.setItem('theme', 'light');
+            } else {
+                document.body.classList.remove('light');
+                localStorage.setItem('theme', 'dark');
+            }
+            // Обновляем активные кнопки в профиле (если есть)
+            document.querySelectorAll('.theme-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.theme === theme) {
+                    btn.classList.add('active');
+                }
+            });
+        }
+
+        // Загружаем сохранённую тему
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        if (savedTheme === 'light') {
+            document.body.classList.add('light');
+        } else {
+            document.body.classList.remove('light');
         }
     </script>
 </body>
