@@ -4,8 +4,8 @@
 
 {% block content %}
 <!-- Кнопка назад -->
-<div style="margin-bottom: 16px;">
-    <a href="/tickets" class="btn-sm" style="background: var(--input-bg); color: var(--text-primary); border: 1px solid var(--border-color); text-decoration: none; padding: 8px 16px; border-radius: var(--radius); display: inline-flex; align-items: center; gap: 6px; transition: var(--transition);">
+<div style="margin-bottom:16px;">
+    <a href="/tickets" class="btn-sm" style="background:var(--bg-card); color:var(--text-secondary); border:1px solid var(--border-color); text-decoration:none; padding:8px 18px; border-radius:30px; display:inline-flex; align-items:center; gap:6px; transition:var(--transition);">
         ← Назад к заявкам
     </a>
 </div>
@@ -14,13 +14,16 @@
     <img src="/static/avatars/{{ user.avatar }}" class="avatar-large" alt="Avatar" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2280%22 height=%2280%22%3E%3Crect width=%2280%22 height=%2280%22 fill=%22667eea%22/%3E%3Ctext x=%2240%22 y=%2254%22 text-anchor=%22middle%22 fill=%22white%22 font-size=%2236%22%3E{{ user.full_name[0] }}%3C/text%3E%3C/svg%3E'">
     <div class="info">
         <h2>{{ user.full_name }}</h2>
-        <p>@{{ user.username }} • {% if user.role == 'employee' %}👨‍💼 Сотрудник{% else %}🛠️ IT-специалист{% endif %}</p>
-        <p style="font-size:0.8rem; color:var(--text-muted);">{{ user.email }}</p>
+        <p>@{{ user.username }} • {% if user.role == 'employee' %}Сотрудник{% else %}IT-специалист{% endif %}</p>
+        <p class="email">{{ user.email }}</p>
     </div>
 </div>
 
 <div class="card">
-    <div class="card-title">🖼️ Аватарка</div>
+    <div class="card-title">🖼️ Выберите аватарку</div>
+    <div style="font-size:0.7rem; color:var(--text-muted); margin-bottom:12px;">
+        {% if user.role == 'employee' %}Для сотрудников{% else %}Для IT-специалистов{% endif %}
+    </div>
     <div class="avatar-grid">
         {% for avatar in available_avatars %}
         <a href="/set_avatar/{{ avatar }}">
@@ -28,10 +31,14 @@
         </a>
         {% endfor %}
     </div>
-    <form method="POST" action="/upload_avatar" enctype="multipart/form-data" style="display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:8px;">
-        <input type="file" name="avatar_file" accept="image/png,image/jpeg,image/jpg,image/gif" style="flex:1; min-width:150px; padding:8px; background:var(--input-bg); border:1px solid var(--border-color); border-radius:var(--radius); color:var(--text-primary);">
-        <button type="submit" class="btn-sm btn-accept">⬆️ Загрузить</button>
-    </form>
+    <div style="margin-top:12px; padding-top:12px; border-top:1px solid var(--border-color);">
+        <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:8px;">Или загрузите свою аватарку</p>
+        <form method="POST" action="/upload_avatar" enctype="multipart/form-data" style="display:flex; flex-wrap:wrap; gap:10px; align-items:center;">
+            <input type="file" name="avatar_file" accept="image/png,image/jpeg,image/jpg,image/gif" style="flex:1; min-width:150px; padding:8px; background:var(--input-bg); border:1px solid var(--border-color); border-radius:var(--radius); color:var(--text-primary); font-size:0.85rem;">
+            <button type="submit" class="btn-sm btn-accept">⬆️ Загрузить</button>
+        </form>
+        <p style="font-size:0.7rem; color:var(--text-muted); margin-top:6px;">Поддерживаются PNG, JPG, GIF (до 5MB)</p>
+    </div>
 </div>
 
 <div class="card">
