@@ -29,11 +29,7 @@ IT_AVATARS = ['it_avatar1.png', 'it_avatar2.png', 'it_avatar3.png', 'it_avatar4.
 DEFAULT_AVATARS = EMPLOYEE_AVATARS + IT_AVATARS
 
 def init_db():
-    # Исправляем предупреждение о datetime
-    sqlite3.register_adapter(datetime, lambda dt: dt.isoformat())
-    sqlite3.register_converter("timestamp", lambda v: datetime.fromisoformat(v.decode()))
-    
-    conn = sqlite3.connect(DB_PATH, detect_types=sqlite3.PARSE_DECLTYPES)
+    conn = sqlite3.connect(DB_PATH)
     cur = conn.cursor()
     
     cur.execute('''
@@ -45,11 +41,6 @@ def init_db():
             role TEXT NOT NULL,
             full_name TEXT NOT NULL,
             avatar TEXT DEFAULT 'emp_avatar1.png',
-            is_verified INTEGER DEFAULT 1,
-            verification_code TEXT,
-            verification_code_expires TIMESTAMP,
-            reset_code TEXT,
-            reset_code_expires TIMESTAMP,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
@@ -76,27 +67,11 @@ def init_db():
         )
     ''')
     
-    cur.execute('''
-        CREATE TABLE IF NOT EXISTS activities (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_name TEXT,
-            action TEXT,
-            ticket_id INTEGER,
-            details TEXT,
-            timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
-    
     conn.commit()
     conn.close()
     print("=" * 60)
     print("✅ База данных готова!")
-    print("👥 НЕТ ТЕСТОВЫХ ПОЛЬЗОВАТЕЛЕЙ!")
-    print("📝 Первый пользователь должен зарегистрироваться")
     print("=" * 60)
-
-def generate_code():
-    return ''.join(random.choices(string.digits, k=6))
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -108,11 +83,14 @@ def register():
         role = request.form.get('role', 'employee')
         
         if not full_name:
-            return render_template('register.html', error='Введите ФИО')
+            flash('❌ Введите ФИО', 'error')
+            return render_template('register.html')
         if not email:
-            return render_template('register.html', error='Введите Email')
+            flash('❌ Введите Email', 'error')
+            return render_template('register.html')
         if len(password) < 6:
-            return render_template('register.html', error='Пароль должен содержать минимум 6 символов')
+            flash('❌ Пароль должен содержать минимум 6 символов', 'error')
+            return render_template('register.html')
         
         conn = sqlite3.connect(DB_PATH)
         cur = conn.cursor()
@@ -122,18 +100,16 @@ def register():
         
         if existing:
             conn.close()
-            return render_template('register.html', error='Такой логин или Email уже существует')
+            flash('❌ Такой логин или Email уже существует', 'error')
+            return render_template('register.html')
         
-        # Выбираем дефолтную аватарку в зависимости от роли
         default_avatar = 'emp_avatar1.png' if role == 'employee' else 'it_avatar1.png'
         
-        # РЕГИСТРАЦИЯ БЕЗ ПОДТВЕРЖДЕНИЯ ПОЧТЫ
         cur.execute('''
-            INSERT INTO users (username, email, password, role, full_name, avatar, is_verified)
-            VALUES (?, ?, ?, ?, ?, ?, 1)
+            INSERT INTO users (username, email, password, role, full_name, avatar)
+            VALUES (?, ?, ?, ?, ?, ?)
         ''', (username, email, password, role, full_name, default_avatar))
         
-        user_id = cur.lastrowid
         conn.commit()
         conn.close()
         
@@ -141,15 +117,6 @@ def register():
         return redirect(url_for('login'))
     
     return render_template('register.html')
-
-@app.route('/verify_email', methods=['GET', 'POST'])
-def verify_email():
-    # Перенаправляем на логин, так как подтверждение не требуется
-    return redirect(url_for('login'))
-
-@app.route('/resend_code', methods=['POST'])
-def resend_code():
-    return redirect(url_for('login'))
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -202,128 +169,10 @@ def login():
             
             return response
         else:
-            return render_template('login.html', error='Неверный логин или пароль')
+            flash('❌ Неверный логин или пароль', 'error')
+            return render_template('login.html')
     
     return render_template('login.html')
-
-@app.route('/forgot_password', methods=['GET', 'POST'])
-def forgot_password():
-    # Просто заглушка для восстановления пароля
-    return render_template('forgot_password.html', error='Функция восстановления пароля временно недоступна')
-
-@app.route('/verify_reset_code', methods=['GET', 'POST'])
-def verify_reset_code():
-    return redirect(url_for('login'))
-
-@app.route('/reset_password', methods=['GET', 'POST'])
-def reset_password():
-    return redirect(url_for('login'))
-
-# ===== ЗАГРУЗКА АВАТАРКИ =====
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in {'png', 'jpg', 'jpeg', 'gif'}
-
-@app.route('/upload_avatar', methods=['POST'])
-def upload_avatar():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-    
-    if 'avatar_file' in request.files:
-        file = request.files['avatar_file']
-        if file and allowed_file(file.filename):
-            ext = file.filename.rsplit('.', 1)[1].lower()
-            filename = f"user_{session['user_id']}_{datetime.now().strftime('%Y%m%d%H%M%S')}.{ext}"
-            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            file.save(filepath)
-            
-            conn = sqlite3.connect(DB_PATH)
-            cur = conn.cursor()
-            cur.execute("UPDATE users SET avatar = ? WHERE id = ?", (filename, session['user_id']))
-            conn.commit()
-            conn.close()
-            
-            session['avatar'] = filename
-            return redirect(url_for('profile'))
-    
-    return redirect(url_for('profile'))
-
-@app.route('/set_avatar/<avatar_name>')
-def set_avatar(avatar_name):
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-    
-    if avatar_name in DEFAULT_AVATARS or avatar_name.startswith('user_'):
-        conn = sqlite3.connect(DB_PATH)
-        cur = conn.cursor()
-        cur.execute("UPDATE users SET avatar = ? WHERE id = ?", (avatar_name, session['user_id']))
-        conn.commit()
-        conn.close()
-        session['avatar'] = avatar_name
-    
-    return redirect(url_for('profile'))
-
-# ===== УПРАВЛЕНИЕ ПРОФИЛЕМ =====
-
-@app.route('/profile', methods=['GET', 'POST'])
-def profile():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-    
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    cur = conn.cursor()
-    cur.execute("SELECT * FROM users WHERE id = ?", (session['user_id'],))
-    user = cur.fetchone()
-    conn.close()
-    
-    if user is None:
-        session.clear()
-        return redirect(url_for('login'))
-    
-    available_avatars = []
-    if user['role'] == 'employee':
-        for f in EMPLOYEE_AVATARS:
-            if os.path.exists(os.path.join(app.config['UPLOAD_FOLDER'], f)):
-                available_avatars.append(f)
-    else:
-        for f in IT_AVATARS:
-            if os.path.exists(os.path.join(app.config['UPLOAD_FOLDER'], f)):
-                available_avatars.append(f)
-    
-    if request.method == 'POST':
-        action = request.form.get('action')
-        
-        if action == 'update_info':
-            new_full_name = request.form.get('full_name', '').strip()
-            new_username = request.form.get('username', '').strip()
-            
-            if not new_full_name:
-                return render_template('profile.html', user=user, available_avatars=available_avatars, error='ФИО не может быть пустым')
-            if not new_username:
-                return render_template('profile.html', user=user, available_avatars=available_avatars, error='Логин не может быть пустым')
-            
-            conn = sqlite3.connect(DB_PATH)
-            cur = conn.cursor()
-            try:
-                cur.execute("UPDATE users SET full_name = ?, username = ? WHERE id = ?",
-                           (new_full_name, new_username, session['user_id']))
-                conn.commit()
-                session['full_name'] = new_full_name
-                session['username'] = new_username
-                conn.close()
-                return render_template('profile.html', user=user, available_avatars=available_avatars, success='Данные обновлены!')
-            except sqlite3.IntegrityError:
-                conn.close()
-                return render_template('profile.html', user=user, available_avatars=available_avatars, error='Такой логин уже существует')
-        
-        elif action == 'request_password_change':
-            # Временно отключено
-            return render_template('profile.html', user=user, available_avatars=available_avatars, error='Функция смены пароля временно недоступна')
-        
-        elif action == 'change_password':
-            return render_template('profile.html', user=user, available_avatars=available_avatars, error='Функция смены пароля временно недоступна')
-    
-    return render_template('profile.html', user=user, available_avatars=available_avatars)
 
 @app.route('/logout')
 def logout():
@@ -364,17 +213,15 @@ def add_ticket():
     title = request.form['title']
     description = request.form['description']
     location = request.form.get('location', '')
-    category = request.form.get('category', 'Техническая')
     priority = request.form.get('priority', 'Средний')
     
     conn = sqlite3.connect(DB_PATH)
     cur = conn.cursor()
     cur.execute('''
-        INSERT INTO tickets (title, description, location, category, priority, created_by, created_by_id, created_by_name, created_by_avatar, status)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'open')
-    ''', (title, description, location, category, priority, session['username'], session['user_id'], session['full_name'], session.get('avatar', 'emp_avatar1.png')))
+        INSERT INTO tickets (title, description, location, priority, created_by, created_by_id, created_by_name, created_by_avatar, status)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'open')
+    ''', (title, description, location, priority, session['username'], session['user_id'], session['full_name'], session.get('avatar', 'emp_avatar1.png')))
     
-    ticket_id = cur.lastrowid
     conn.commit()
     conn.close()
     
@@ -454,9 +301,110 @@ def delete_ticket(ticket_id):
     
     return redirect(url_for('tickets_page'))
 
+@app.route('/profile', methods=['GET', 'POST'])
+def profile():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM users WHERE id = ?", (session['user_id'],))
+    user = cur.fetchone()
+    conn.close()
+    
+    if user is None:
+        session.clear()
+        return redirect(url_for('login'))
+    
+    available_avatars = []
+    if user['role'] == 'employee':
+        for f in EMPLOYEE_AVATARS:
+            if os.path.exists(os.path.join(app.config['UPLOAD_FOLDER'], f)):
+                available_avatars.append(f)
+    else:
+        for f in IT_AVATARS:
+            if os.path.exists(os.path.join(app.config['UPLOAD_FOLDER'], f)):
+                available_avatars.append(f)
+    
+    if request.method == 'POST':
+        action = request.form.get('action')
+        
+        if action == 'update_info':
+            new_full_name = request.form.get('full_name', '').strip()
+            new_username = request.form.get('username', '').strip()
+            
+            if not new_full_name:
+                flash('❌ ФИО не может быть пустым', 'error')
+                return render_template('profile.html', user=user, available_avatars=available_avatars)
+            if not new_username:
+                flash('❌ Логин не может быть пустым', 'error')
+                return render_template('profile.html', user=user, available_avatars=available_avatars)
+            
+            conn = sqlite3.connect(DB_PATH)
+            cur = conn.cursor()
+            try:
+                cur.execute("UPDATE users SET full_name = ?, username = ? WHERE id = ?",
+                           (new_full_name, new_username, session['user_id']))
+                conn.commit()
+                session['full_name'] = new_full_name
+                session['username'] = new_username
+                conn.close()
+                flash('✅ Данные обновлены!', 'success')
+                return redirect(url_for('profile'))
+            except sqlite3.IntegrityError:
+                conn.close()
+                flash('❌ Такой логин уже существует', 'error')
+                return render_template('profile.html', user=user, available_avatars=available_avatars)
+    
+    return render_template('profile.html', user=user, available_avatars=available_avatars)
+
+@app.route('/upload_avatar', methods=['POST'])
+def upload_avatar():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    if 'avatar_file' in request.files:
+        file = request.files['avatar_file']
+        if file and allowed_file(file.filename):
+            ext = file.filename.rsplit('.', 1)[1].lower()
+            filename = f"user_{session['user_id']}_{datetime.now().strftime('%Y%m%d%H%M%S')}.{ext}"
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            file.save(filepath)
+            
+            conn = sqlite3.connect(DB_PATH)
+            cur = conn.cursor()
+            cur.execute("UPDATE users SET avatar = ? WHERE id = ?", (filename, session['user_id']))
+            conn.commit()
+            conn.close()
+            
+            session['avatar'] = filename
+            flash('✅ Аватарка обновлена!', 'success')
+            return redirect(url_for('profile'))
+    
+    return redirect(url_for('profile'))
+
+@app.route('/set_avatar/<avatar_name>')
+def set_avatar(avatar_name):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    if avatar_name in DEFAULT_AVATARS or avatar_name.startswith('user_'):
+        conn = sqlite3.connect(DB_PATH)
+        cur = conn.cursor()
+        cur.execute("UPDATE users SET avatar = ? WHERE id = ?", (avatar_name, session['user_id']))
+        conn.commit()
+        conn.close()
+        session['avatar'] = avatar_name
+        flash('✅ Аватарка изменена!', 'success')
+    
+    return redirect(url_for('profile'))
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in {'png', 'jpg', 'jpeg', 'gif'}
+
 # ===== ЗАПУСК ДЛЯ RENDER.COM =====
 if __name__ == '__main__':
-    import os
     port = int(os.environ.get('PORT', 5000))
     
     print("=" * 60)
@@ -467,14 +415,8 @@ if __name__ == '__main__':
     
     print("=" * 60)
     print(f"🚀 СЕРВЕР ЗАПУЩЕН на порту {port}!")
-    print("📱 Доступен по адресу: http://0.0.0.0:" + str(port))
-    print("=" * 60)
-    print("🖼️ АВАТАРКИ ПО РОЛЯМ:")
-    print("   👨‍💼 Сотрудники (6 аватарок без наушников)")
-    print("   🛠️ IT-специалисты (6 аватарок с наушниками)")
     print("=" * 60)
     print("📝 РЕГИСТРАЦИЯ БЕЗ ПОДТВЕРЖДЕНИЯ ПОЧТЫ!")
-    print("   ПЕРВЫЙ ПОЛЬЗОВАТЕЛЬ ДОЛЖЕН ЗАРЕГИСТРИРОВАТЬСЯ!")
     print("=" * 60)
     
     app.run(host='0.0.0.0', port=port, debug=False)
