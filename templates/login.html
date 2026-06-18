@@ -1,245 +1,38 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Вход — IT Helpdesk</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+{% extends 'base.html' %}
 
-        :root {
-            --bg-primary: #f2f2f7;
-            --bg-card: rgba(255,255,255,0.95);
-            --text-primary: #000000;
-            --text-secondary: #6c6c70;
-            --border-color: #c6c6c8;
-            --input-bg: rgba(0,0,0,0.05);
-            --shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
-        }
+{% block title %}Вход — IT Helpdesk{% endblock %}
 
-        body.dark {
-            --bg-primary: #000000;
-            --bg-card: rgba(28,28,30,0.95);
-            --text-primary: #ffffff;
-            --text-secondary: #8e8e93;
-            --border-color: #38383a;
-            --input-bg: rgba(255,255,255,0.1);
-            --shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
-        }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background: var(--bg-primary);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            transition: background 0.3s;
-        }
-
-        .theme-top-btn {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: var(--input-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 30px;
-            padding: 10px 15px;
-            cursor: pointer;
-            font-size: 1.2rem;
-            z-index: 100;
-        }
-
-        .login-card {
-            background: var(--bg-card);
-            backdrop-filter: blur(20px);
-            border-radius: 48px;
-            padding: 48px 40px;
-            width: 420px;
-            border: 1px solid var(--border-color);
-            box-shadow: var(--shadow);
-        }
-
-        h1 {
-            font-size: 2.5rem;
-            font-weight: 800;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-            text-align: center;
-        }
-
-        .sub {
-            text-align: center;
-            color: var(--text-secondary);
-            margin-bottom: 2rem;
-            font-size: 0.85rem;
-        }
-
-        .input-group {
-            position: relative;
-            margin: 0.8rem 0;
-        }
-
-        .input-group input {
-            width: 100%;
-            padding: 1rem 1.2rem;
-            background: var(--input-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 28px;
-            color: var(--text-primary);
-            font-size: 1rem;
-            padding-right: 50px;
-        }
-
-        .input-group input:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-
-        .toggle-password {
-            position: absolute;
-            right: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            cursor: pointer;
-            font-size: 1.2rem;
-            background: none;
-            border: none;
-            color: var(--text-secondary);
-            z-index: 10;
-            padding: 5px;
-        }
-
-        .toggle-password:hover {
-            opacity: 0.7;
-        }
-
-        button[type="submit"] {
-            width: 100%;
-            padding: 1rem;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            border: none;
-            border-radius: 32px;
-            color: white;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            margin-top: 1rem;
-        }
-
-        .checkbox-group {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin: 1rem 0 0 0;
-        }
-        .checkbox-group input {
-            width: 18px;
-            height: 18px;
-            margin: 0;
-        }
-        .checkbox-group label {
-            color: var(--text-secondary);
-            font-size: 0.85rem;
-        }
-
-        .forgot-link {
-            text-align: right;
-            margin-top: 0.5rem;
-        }
-        .forgot-link a {
-            color: #667eea;
-            text-decoration: none;
-            font-size: 0.8rem;
-        }
-
-        .register-link {
-            text-align: center;
-            margin-top: 1.5rem;
-            color: var(--text-secondary);
-        }
-        .register-link a { color: #667eea; text-decoration: none; }
-
-        .error {
-            background: rgba(255,69,58,0.2);
-            color: #ff453a;
-            padding: 0.75rem;
-            border-radius: 20px;
-            margin-top: 1rem;
-            text-align: center;
-            font-size: 0.85rem;
-        }
-    </style>
-</head>
-<body>
-<button class="theme-top-btn" onclick="toggleTheme()" id="themeBtn">🌙</button>
-
-<div class="login-card">
-    <h1>IT HELPDESK</h1>
-    <div class="sub">ООО «МАГНАТ» • Вход в систему</div>
-
-    <form method="POST">
-        <div class="input-group">
-            <input type="text" name="username" placeholder="Логин" required>
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card">
+        <div class="logo-center">
+            <h1>IT HELPDESK</h1>
+            <p>ООО «МАГНАТ»</p>
         </div>
-        
-        <div class="input-group">
-            <input type="password" name="password" id="password" placeholder="Пароль" required>
-            <button type="button" class="toggle-password" onclick="togglePassword('password')">👁️</button>
+        <div class="sub">Войдите в систему</div>
+
+        <form method="POST">
+            <div class="form-group">
+                <label>👤 Логин</label>
+                <input type="text" name="username" placeholder="Введите логин" required>
+            </div>
+            <div class="form-group">
+                <label>🔒 Пароль</label>
+                <input type="password" name="password" placeholder="Введите пароль" required>
+            </div>
+            <div class="form-group" style="display:flex; align-items:center; gap:8px;">
+                <input type="checkbox" name="remember" id="remember" style="width:auto;">
+                <label for="remember" style="font-size:0.85rem; color:var(--text-muted);">Запомнить меня</label>
+            </div>
+            <button type="submit" class="btn-primary">Войти →</button>
+        </form>
+
+        <div class="auth-link">
+            Нет аккаунта? <a href="/register">Зарегистрироваться</a>
         </div>
-        
-        <div class="checkbox-group">
-            <input type="checkbox" name="remember" id="remember">
-            <label for="remember">Запомнить меня</label>
-        </div>
-        
-        <div class="forgot-link">
+        <div class="auth-link" style="margin-top:8px; font-size:0.75rem;">
             <a href="/forgot_password">Забыли пароль?</a>
         </div>
-        
-        <button type="submit">Войти →</button>
-    </form>
-
-    {% if error %}
-    <div class="error">{{ error }}</div>
-    {% endif %}
-
-    <div class="register-link">
-        Нет аккаунта? <a href="/register">Зарегистрироваться</a>
     </div>
 </div>
-
-<script>
-    function togglePassword(fieldId) {
-        const field = document.getElementById(fieldId);
-        const btn = event.currentTarget;
-        if (field.type === 'password') {
-            field.type = 'text';
-            btn.innerHTML = '🙈';
-        } else {
-            field.type = 'password';
-            btn.innerHTML = '👁️';
-        }
-    }
-
-    function toggleTheme() {
-        document.body.classList.toggle('dark');
-        const btn = document.getElementById('themeBtn');
-        if (document.body.classList.contains('dark')) {
-            btn.innerHTML = '☀️';
-            localStorage.setItem('theme', 'dark');
-        } else {
-            btn.innerHTML = '🌙';
-            localStorage.setItem('theme', 'light');
-        }
-    }
-    if (localStorage.getItem('theme') === 'dark') {
-        document.body.classList.add('dark');
-        document.getElementById('themeBtn').innerHTML = '☀️';
-    }
-</script>
-</body>
-</html>
+{% endblock %}
