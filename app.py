@@ -14,11 +14,14 @@ app.secret_key = 'ultra_secret_key_2026_magnat'
 app.config['UPLOAD_FOLDER'] = 'static/avatars'
 app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # 5MB
 
+# ===== ДЛЯ RENDER.COM =====
+# База данных во временной папке /tmp
+DB_PATH = '/tmp/database.db'
+# ==========================
+
 # Создаем папку для аватарок если её нет
 if not os.path.exists(app.config['UPLOAD_FOLDER']):
     os.makedirs(app.config['UPLOAD_FOLDER'])
-
-DB_PATH = 'database.db'
 
 # ===== НАСТРОЙКИ ДЛЯ ОТПРАВКИ ПИСЕМ =====
 EMAIL_ADDRESS = "ababkovaksenia3@gmail.com"
@@ -731,14 +734,21 @@ def delete_ticket(ticket_id):
     
     return redirect(url_for('tickets_page'))
 
+# ===== ЗАПУСК ДЛЯ RENDER.COM =====
 if __name__ == '__main__':
+    import os
+    port = int(os.environ.get('PORT', 5000))
+    
     print("=" * 60)
-    print("🔥 IT HELPDESK с разными аватарками 🔥")
+    print("🔥 IT HELPDESK ЗАПУЩЕН!")
     print("=" * 60)
+    
+    # Инициализируем базу данных
     init_db()
+    
     print("=" * 60)
-    print("🚀 СЕРВЕР ЗАПУЩЕН!")
-    print("📱 http://127.0.0.1:5000")
+    print(f"🚀 СЕРВЕР ЗАПУЩЕН на порту {port}!")
+    print("📱 Доступен по адресу: http://0.0.0.0:" + str(port))
     print("=" * 60)
     print("🖼️ АВАТАРКИ ПО РОЛЯМ:")
     print("   👨‍💼 Сотрудники (6 аватарок без наушников)")
@@ -747,4 +757,5 @@ if __name__ == '__main__':
     print("📝 ПЕРВЫЙ ПОЛЬЗОВАТЕЛЬ ДОЛЖЕН ЗАРЕГИСТРИРОВАТЬСЯ!")
     print("   НЕТ ТЕСТОВЫХ АККАУНТОВ")
     print("=" * 60)
-    app.run(debug=True, host='127.0.0.1', port=5000)
+    
+    app.run(host='0.0.0.0', port=port, debug=False)
