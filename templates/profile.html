@@ -22,7 +22,7 @@
         {% endfor %}
     </div>
     <form method="POST" action="/upload_avatar" enctype="multipart/form-data" style="display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:8px;">
-        <input type="file" name="avatar_file" accept="image/png,image/jpeg,image/jpg,image/gif" style="flex:1; min-width:150px; padding:8px; background:var(--input-bg); border:1px solid var(--border-color); border-radius:var(--radius);">
+        <input type="file" name="avatar_file" accept="image/png,image/jpeg,image/jpg,image/gif" style="flex:1; min-width:150px; padding:8px; background:var(--input-bg); border:1px solid var(--border-color); border-radius:var(--radius); color:var(--text-primary);">
         <button type="submit" class="btn-sm btn-accept">⬆️ Загрузить</button>
     </form>
 </div>
@@ -39,7 +39,7 @@
             <label>Логин</label>
             <input type="text" name="username" value="{{ user.username }}" required>
         </div>
-        <button type="submit" class="btn-primary">💾 Сохранить</button>
+        <button type="submit" class="btn-primary">💾 Сохранить изменения</button>
     </form>
 </div>
 
