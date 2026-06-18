@@ -24,18 +24,21 @@
                 <label>📧 Email</label>
                 <input type="email" name="email" placeholder="your@email.com" required>
             </div>
-            <div class="form-group" style="font-size:0.75rem; color:var(--text-muted); padding:8px 12px; background:var(--input-bg); border-radius:var(--radius); margin-bottom:12px;">
+            <div class="form-group" style="font-size:0.75rem; color:var(--text-muted); padding:10px 14px; background:var(--input-bg); border-radius:var(--radius); margin-bottom:12px; border-left:3px solid var(--accent-primary);">
                 ℹ️ В ближайшее время будет доступно подтверждение по почте. Пока регистрация проходит без кода.
             </div>
-            <div class="form-group">
+            <div class="form-group" style="position:relative;">
                 <label>🔒 Пароль</label>
-                <input type="password" name="password" placeholder="Минимум 6 символов" required minlength="6">
+                <input type="password" name="password" id="register-password" placeholder="Минимум 6 символов" required minlength="6" style="padding-right: 50px;">
+                <button type="button" class="toggle-password" onclick="togglePassword('register-password', this)" style="position:absolute; right:12px; top:38px; background:none; border:none; font-size:1.2rem; cursor:pointer; color:var(--text-muted); padding:4px;">
+                    👁️
+                </button>
             </div>
             <div class="form-group">
                 <label>Выберите роль</label>
                 <select name="role">
-                    <option value="employee">👨‍💼 Сотрудник</option>
-                    <option value="it_specialist">🛠️ IT-специалист</option>
+                    <option value="employee">👨‍💼 Сотрудник (создаю заявки)</option>
+                    <option value="it_specialist">🛠️ IT-специалист (принимаю заявки)</option>
                 </select>
             </div>
             <button type="submit" class="btn-primary">✅ Зарегистрироваться</button>
@@ -46,4 +49,26 @@
         </div>
     </div>
 </div>
+
+<style>
+    .toggle-password:hover {
+        opacity: 0.7;
+    }
+    body.dark .toggle-password {
+        color: var(--text-muted);
+    }
+</style>
+
+<script>
+    function togglePassword(inputId, btn) {
+        const input = document.getElementById(inputId);
+        if (input.type === 'password') {
+            input.type = 'text';
+            btn.textContent = '🙈';
+        } else {
+            input.type = 'password';
+            btn.textContent = '👁️';
+        }
+    }
+</script>
 {% endblock %}
