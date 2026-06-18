@@ -2,20 +2,27 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
     <title>Регистрация — IT Helpdesk</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
         :root {
             --bg-primary: #f2f2f7;
             --bg-card: rgba(255,255,255,0.95);
             --text-primary: #000000;
             --text-secondary: #6c6c70;
+            --text-muted: #8e8e93;
             --border-color: #c6c6c8;
             --input-bg: rgba(0,0,0,0.05);
             --shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+            --accent-primary: #667eea;
+            --accent-secondary: #764ba2;
         }
 
         body.dark {
@@ -23,6 +30,7 @@
             --bg-card: rgba(28,28,30,0.95);
             --text-primary: #ffffff;
             --text-secondary: #8e8e93;
+            --text-muted: #636366;
             --border-color: #38383a;
             --input-bg: rgba(255,255,255,0.1);
             --shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
@@ -36,6 +44,7 @@
             justify-content: center;
             align-items: center;
             transition: background 0.3s;
+            padding: 20px;
         }
 
         .theme-top-btn {
@@ -49,6 +58,11 @@
             cursor: pointer;
             font-size: 1.2rem;
             z-index: 100;
+            transition: all 0.3s;
+        }
+
+        .theme-top-btn:hover {
+            transform: scale(1.05);
         }
 
         .register-card {
@@ -56,25 +70,39 @@
             backdrop-filter: blur(20px);
             border-radius: 48px;
             padding: 48px 40px;
-            width: 450px;
+            width: 100%;
+            max-width: 480px;
             border: 1px solid var(--border-color);
             box-shadow: var(--shadow);
+            transition: all 0.3s;
         }
 
-        h1 {
+        .logo {
+            text-align: center;
+            margin-bottom: 8px;
+        }
+
+        .logo h1 {
             font-size: 2rem;
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
-            text-align: center;
+        }
+
+        .logo p {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            letter-spacing: 1px;
+            margin-top: -4px;
         }
 
         .sub {
             text-align: center;
             color: var(--text-secondary);
             margin-bottom: 2rem;
-            font-size: 0.85rem;
+            font-size: 0.9rem;
         }
 
         .input-group {
@@ -82,26 +110,44 @@
             margin: 0.5rem 0;
         }
 
-        .input-group input, select {
+        .input-group input,
+        .input-group select {
             width: 100%;
             padding: 1rem 1.2rem;
             background: var(--input-bg);
-            border: 1px solid var(--border-color);
+            border: 2px solid var(--border-color);
             border-radius: 28px;
             color: var(--text-primary);
             font-size: 1rem;
-        }
-
-        .input-group input {
-            padding-right: 50px;
-        }
-
-        select {
-            padding: 1rem 1.2rem;
+            font-family: inherit;
+            transition: all 0.3s;
             appearance: none;
         }
 
-        .toggle-password {
+        .input-group input:focus,
+        .input-group select:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.15);
+        }
+
+        .input-group input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .input-group select {
+            padding-right: 2.5rem;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236c6c70' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 1.2rem center;
+            cursor: pointer;
+        }
+
+        body.dark .input-group select {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238e8e93' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+        }
+
+        .input-group .toggle-password {
             position: absolute;
             right: 15px;
             top: 50%;
@@ -113,122 +159,283 @@
             color: var(--text-secondary);
             z-index: 10;
             padding: 5px;
+            transition: all 0.3s;
         }
 
-        .toggle-password:hover {
+        .input-group .toggle-password:hover {
             opacity: 0.7;
         }
 
-        button[type="submit"] {
+        .hint {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-top: 0.3rem;
+            margin-bottom: 0.5rem;
+            padding-left: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .hint .icon {
+            font-size: 0.8rem;
+        }
+
+        .hint-info {
+            background: rgba(102, 126, 234, 0.08);
+            border-radius: 12px;
+            padding: 0.8rem 1rem;
+            margin: 0.5rem 0 1rem 0;
+            border-left: 3px solid var(--accent-primary);
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .hint-info .icon {
+            font-size: 1.2rem;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+
+        .btn-submit {
             width: 100%;
             padding: 1rem;
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
             border: none;
             border-radius: 32px;
             color: white;
+            font-size: 1rem;
             font-weight: 600;
             cursor: pointer;
-            margin-top: 1rem;
+            transition: all 0.3s;
+            margin-top: 0.5rem;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.35);
+        }
+
+        .btn-submit:active {
+            transform: translateY(0);
         }
 
         .login-link {
             text-align: center;
             margin-top: 1.5rem;
             color: var(--text-secondary);
+            font-size: 0.9rem;
         }
-        .login-link a { color: #667eea; text-decoration: none; }
+
+        .login-link a {
+            color: var(--accent-primary);
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .login-link a:hover {
+            color: var(--accent-secondary);
+            text-decoration: underline;
+        }
+
         .error {
-            background: rgba(255,69,58,0.2);
+            background: rgba(255, 69, 58, 0.12);
             color: #ff453a;
-            padding: 0.75rem;
-            border-radius: 20px;
+            padding: 0.75rem 1rem;
+            border-radius: 16px;
             margin-top: 1rem;
             text-align: center;
             font-size: 0.85rem;
+            border-left: 3px solid #ff453a;
         }
-        .hint {
-            font-size: 0.7rem;
+
+        .success {
+            background: rgba(48, 209, 88, 0.12);
+            color: #30d158;
+            padding: 0.75rem 1rem;
+            border-radius: 16px;
+            margin-top: 1rem;
+            text-align: center;
+            font-size: 0.85rem;
+            border-left: 3px solid #30d158;
+        }
+
+        .role-label {
+            font-size: 0.85rem;
+            font-weight: 500;
             color: var(--text-secondary);
-            margin-top: -0.3rem;
-            margin-bottom: 0.5rem;
-            text-align: left;
+            margin-bottom: 0.3rem;
+            display: block;
+        }
+
+        /* Адаптивность */
+        @media (max-width: 600px) {
+            .register-card {
+                padding: 32px 24px;
+                border-radius: 32px;
+            }
+
+            .logo h1 {
+                font-size: 1.6rem;
+            }
+
+            .sub {
+                font-size: 0.8rem;
+                margin-bottom: 1.5rem;
+            }
+
+            .input-group input,
+            .input-group select {
+                padding: 0.85rem 1rem;
+                font-size: 0.95rem;
+                border-radius: 24px;
+            }
+
+            .btn-submit {
+                padding: 0.85rem;
+                font-size: 0.95rem;
+            }
+
+            .hint {
+                font-size: 0.65rem;
+            }
+
+            .hint-info {
+                font-size: 0.8rem;
+                padding: 0.6rem 0.8rem;
+            }
+
+            .theme-top-btn {
+                top: 12px;
+                right: 12px;
+                padding: 8px 12px;
+                font-size: 1rem;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .register-card {
+                padding: 24px 16px;
+                border-radius: 24px;
+            }
+
+            .logo h1 {
+                font-size: 1.4rem;
+            }
+        }
+
+        @media (min-width: 768px) {
+            .register-card {
+                padding: 56px 48px;
+                max-width: 500px;
+            }
         }
     </style>
 </head>
 <body>
-<button class="theme-top-btn" onclick="toggleTheme()" id="themeBtn">🌙</button>
+    <button class="theme-top-btn" onclick="toggleTheme()" id="themeBtn">🌙</button>
 
-<div class="register-card">
-    <h1>Регистрация</h1>
-    <div class="sub">Создайте аккаунт в IT Helpdesk</div>
+    <div class="register-card">
+        <div class="logo">
+            <h1>IT HELPDESK</h1>
+            <p>ООО «МАГНАТ»</p>
+        </div>
 
-    <form method="POST">
-        <div class="input-group">
-            <input type="text" name="full_name" placeholder="Ваше ФИО (обязательно)" required>
-        </div>
-        <div class="hint">📝 Введите полное ФИО</div>
-        
-        <div class="input-group">
-            <input type="text" name="username" placeholder="Логин" required>
-        </div>
-        <div class="hint">🔑 Придумайте уникальный логин</div>
-        
-        <div class="input-group">
-            <input type="email" name="email" placeholder="Email (обязательно)" required>
-        </div>
-        <div class="hint">📧 На этот email придет код для подтверждения</div>
-        
-        <div class="input-group">
-            <input type="password" name="password" id="password" placeholder="Пароль" required>
-            <button type="button" class="toggle-password" onclick="togglePassword('password')">👁️</button>
-        </div>
-        <div class="hint">🔒 Пароль должен содержать минимум 6 символов</div>
-        
-        <select name="role">
-            <option value="employee">👨‍💼 Сотрудник (создаю заявки)</option>
-            <option value="it_specialist">🛠️ IT-специалист (принимаю заявки)</option>
-        </select>
-        
-        <button type="submit">✅ Зарегистрироваться</button>
-    </form>
+        <div class="sub">Создайте аккаунт в IT Helpdesk</div>
 
-    {% if error %}
-    <div class="error">{{ error }}</div>
-    {% endif %}
+        <form method="POST">
+            <!-- ФИО -->
+            <div class="input-group">
+                <input type="text" name="full_name" placeholder="Ваше полное ФИО" required>
+            </div>
+            <div class="hint">
+                <span class="icon">📝</span> Введите полное ФИО
+            </div>
 
-    <div class="login-link">
-        Уже есть аккаунт? <a href="/login">Войти</a>
+            <!-- Логин -->
+            <div class="input-group">
+                <input type="text" name="username" placeholder="Придумайте логин" required>
+            </div>
+            <div class="hint">
+                <span class="icon">🔑</span> Уникальный логин для входа
+            </div>
+
+            <!-- Email -->
+            <div class="input-group">
+                <input type="email" name="email" placeholder="Email" required>
+            </div>
+            <div class="hint-info">
+                <span class="icon">📧</span>
+                <span>На этот email в ближайшее время будет доступна функция подтверждения. Пока регистрация проходит без кода.</span>
+            </div>
+
+            <!-- Пароль -->
+            <div class="input-group">
+                <input type="password" name="password" id="password" placeholder="Пароль" required>
+                <button type="button" class="toggle-password" onclick="togglePassword('password')">👁️</button>
+            </div>
+            <div class="hint">
+                <span class="icon">🔒</span> Минимум 6 символов
+            </div>
+
+            <!-- Роль -->
+            <label class="role-label">Выберите роль</label>
+            <div class="input-group">
+                <select name="role">
+                    <option value="employee">👨‍💼 Сотрудник (создаю заявки)</option>
+                    <option value="it_specialist">🛠️ IT-специалист (принимаю заявки)</option>
+                </select>
+            </div>
+
+            <button type="submit" class="btn-submit">✅ Зарегистрироваться</button>
+        </form>
+
+        {% if error %}
+        <div class="error">{{ error }}</div>
+        {% endif %}
+
+        {% if success %}
+        <div class="success">{{ success }}</div>
+        {% endif %}
+
+        <div class="login-link">
+            Уже есть аккаунт? <a href="/login">Войти →</a>
+        </div>
     </div>
-</div>
 
-<script>
-    function togglePassword(fieldId) {
-        const field = document.getElementById(fieldId);
-        const btn = event.currentTarget;
-        if (field.type === 'password') {
-            field.type = 'text';
-            btn.innerHTML = '🙈';
-        } else {
-            field.type = 'password';
-            btn.innerHTML = '👁️';
+    <script>
+        function togglePassword(fieldId) {
+            const field = document.getElementById(fieldId);
+            const btn = event.currentTarget;
+            if (field.type === 'password') {
+                field.type = 'text';
+                btn.innerHTML = '🙈';
+            } else {
+                field.type = 'password';
+                btn.innerHTML = '👁️';
+            }
         }
-    }
 
-    function toggleTheme() {
-        document.body.classList.toggle('dark');
-        const btn = document.getElementById('themeBtn');
-        if (document.body.classList.contains('dark')) {
-            btn.innerHTML = '☀️';
-            localStorage.setItem('theme', 'dark');
-        } else {
-            btn.innerHTML = '🌙';
-            localStorage.setItem('theme', 'light');
+        function toggleTheme() {
+            document.body.classList.toggle('dark');
+            const btn = document.getElementById('themeBtn');
+            if (document.body.classList.contains('dark')) {
+                btn.innerHTML = '☀️';
+                localStorage.setItem('theme', 'dark');
+            } else {
+                btn.innerHTML = '🌙';
+                localStorage.setItem('theme', 'light');
+            }
         }
-    }
-    if (localStorage.getItem('theme') === 'dark') {
-        document.body.classList.add('dark');
-        document.getElementById('themeBtn').innerHTML = '☀️';
-    }
-</script>
+
+        if (localStorage.getItem('theme') === 'dark') {
+            document.body.classList.add('dark');
+            document.getElementById('themeBtn').innerHTML = '☀️';
+        }
+    </script>
 </body>
 </html>
