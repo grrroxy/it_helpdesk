@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session, jsonify, make_response
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify, make_response, flash
 import sqlite3
 import os
 import random
@@ -15,7 +15,6 @@ app.config['UPLOAD_FOLDER'] = 'static/avatars'
 app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # 5MB
 
 # ===== ДЛЯ RENDER.COM =====
-# База данных во временной папке /tmp
 DB_PATH = '/tmp/database.db'
 # ==========================
 
@@ -23,11 +22,11 @@ DB_PATH = '/tmp/database.db'
 if not os.path.exists(app.config['UPLOAD_FOLDER']):
     os.makedirs(app.config['UPLOAD_FOLDER'])
 
-# ===== НАСТРОЙКИ ДЛЯ ОТПРАВКИ ПИСЕМ =====
-EMAIL_ADDRESS = "ababkovaksenia3@gmail.com"
-EMAIL_PASSWORD = "lckb rpgf mskw qraf"
-SMTP_SERVER = "smtp.gmail.com"
-SMTP_PORT = 587
+# ===== НАСТРОЙКИ ДЛЯ ОТПРАВКИ ПИСЕМ (Яндекс) =====
+EMAIL_ADDRESS = "grrroxy@ya.ru"
+EMAIL_PASSWORD = "pcoptzmwflixwgyc"  # пароль приложения
+SMTP_SERVER = "smtp.yandex.ru"
+SMTP_PORT = 465
 
 # 6 аватарок для сотрудников (без наушников)
 EMPLOYEE_AVATARS = ['emp_avatar1.png', 'emp_avatar2.png', 'emp_avatar3.png', 'emp_avatar4.png', 'emp_avatar5.png', 'emp_avatar6.png']
@@ -39,7 +38,7 @@ IT_AVATARS = ['it_avatar1.png', 'it_avatar2.png', 'it_avatar3.png', 'it_avatar4.
 DEFAULT_AVATARS = EMPLOYEE_AVATARS + IT_AVATARS
 
 def send_email(to_email, subject, body_html):
-    """Отправляет письмо"""
+    """Отправляет письмо через Яндекс SMTP"""
     try:
         msg = MIMEMultipart()
         msg['From'] = EMAIL_ADDRESS
@@ -48,8 +47,8 @@ def send_email(to_email, subject, body_html):
         
         msg.attach(MIMEText(body_html, 'html'))
         
-        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
-        server.starttls()
+        # Для Яндекс используем SSL
+        server = smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT)
         server.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
         server.send_message(msg)
         server.quit()
@@ -231,12 +230,20 @@ def register():
         conn.commit()
         conn.close()
         
+        # Отправляем письмо с кодом
         if send_verification_email(email, verification_code):
             session['pending_verification_email'] = email
             session['pending_verification_user_id'] = user_id
+            flash('Код подтверждения отправлен на вашу почту!', 'success')
             return redirect(url_for('verify_email'))
         else:
-            return render_template('register.html', error='Ошибка отправки письма. Попробуйте позже.')
+            # Если письмо не отправилось, удаляем пользователя
+            conn = sqlite3.connect(DB_PATH)
+            cur = conn.cursor()
+            cur.execute("DELETE FROM users WHERE id = ?", (user_id,))
+            conn.commit()
+            conn.close()
+            return render_template('register.html', error='Ошибка отправки письма. Попробуйте позже или используйте другую почту.')
     
     return render_template('register.html')
 
@@ -271,6 +278,7 @@ def verify_email():
             session.pop('pending_verification_email', None)
             session.pop('pending_verification_user_id', None)
             
+            flash('✅ Почта подтверждена! Теперь войдите в систему.', 'success')
             return redirect(url_for('login'))
         else:
             conn.close()
@@ -355,11 +363,11 @@ def login():
             conn = sqlite3.connect(DB_PATH)
             conn.row_factory = sqlite3.Row
             cur = conn.cursor()
-            cur.execute("SELECT * FROM users WHERE username = ? AND password = ? AND is_verified = 0", (username, password))
+            cur.execute("SELECT * FROM users WHERE username = ? AND password = ?", (username, password))
             unverified = cur.fetchone()
             conn.close()
             
-            if unverified:
+            if unverified and unverified['is_verified'] == 0:
                 return render_template('login.html', error='Аккаунт не подтвержден. Проверьте вашу почту.')
             else:
                 return render_template('login.html', error='Неверный логин или пароль')
@@ -388,6 +396,7 @@ def forgot_password():
             if send_reset_email(email, reset_code):
                 conn.close()
                 session['reset_email'] = email
+                flash('Код восстановления отправлен на вашу почту!', 'success')
                 return redirect(url_for('verify_reset_code'))
             else:
                 conn.close()
@@ -453,6 +462,7 @@ def reset_password():
         session.pop('reset_email', None)
         session.pop('reset_code_verified', None)
         
+        flash('✅ Пароль успешно изменен!', 'success')
         return redirect(url_for('login'))
     
     return render_template('reset_password.html')
@@ -490,14 +500,12 @@ def set_avatar(avatar_name):
     if 'user_id' not in session:
         return redirect(url_for('login'))
     
-    # Проверяем, что аватарка существует в списке разрешенных
     if avatar_name in DEFAULT_AVATARS or avatar_name.startswith('user_'):
         conn = sqlite3.connect(DB_PATH)
         cur = conn.cursor()
         cur.execute("UPDATE users SET avatar = ? WHERE id = ?", (avatar_name, session['user_id']))
         conn.commit()
         conn.close()
-        
         session['avatar'] = avatar_name
     
     return redirect(url_for('profile'))
@@ -520,7 +528,6 @@ def profile():
         session.clear()
         return redirect(url_for('login'))
     
-    # Получаем список доступных аватарок в зависимости от роли
     available_avatars = []
     if user['role'] == 'employee':
         for f in EMPLOYEE_AVATARS:
@@ -743,19 +750,12 @@ if __name__ == '__main__':
     print("🔥 IT HELPDESK ЗАПУЩЕН!")
     print("=" * 60)
     
-    # Инициализируем базу данных
     init_db()
     
     print("=" * 60)
     print(f"🚀 СЕРВЕР ЗАПУЩЕН на порту {port}!")
-    print("📱 Доступен по адресу: http://0.0.0.0:" + str(port))
-    print("=" * 60)
-    print("🖼️ АВАТАРКИ ПО РОЛЯМ:")
-    print("   👨‍💼 Сотрудники (6 аватарок без наушников)")
-    print("   🛠️ IT-специалисты (6 аватарок с наушниками)")
     print("=" * 60)
     print("📝 ПЕРВЫЙ ПОЛЬЗОВАТЕЛЬ ДОЛЖЕН ЗАРЕГИСТРИРОВАТЬСЯ!")
-    print("   НЕТ ТЕСТОВЫХ АККАУНТОВ")
     print("=" * 60)
     
     app.run(host='0.0.0.0', port=port, debug=False)
