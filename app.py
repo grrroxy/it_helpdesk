@@ -26,7 +26,7 @@ if not os.path.exists(app.config['UPLOAD_FOLDER']):
 EMAIL_ADDRESS = "grrroxy@ya.ru"
 EMAIL_PASSWORD = "pcoptzmwflixwgyc"  # пароль приложения
 SMTP_SERVER = "smtp.yandex.ru"
-SMTP_PORT = 465
+SMTP_PORT = 465  # SSL порт
 
 # 6 аватарок для сотрудников (без наушников)
 EMPLOYEE_AVATARS = ['emp_avatar1.png', 'emp_avatar2.png', 'emp_avatar3.png', 'emp_avatar4.png', 'emp_avatar5.png', 'emp_avatar6.png']
@@ -40,24 +40,42 @@ DEFAULT_AVATARS = EMPLOYEE_AVATARS + IT_AVATARS
 def send_email(to_email, subject, body_html):
     """Отправляет письмо через Яндекс SMTP"""
     try:
+        # Создаем письмо
         msg = MIMEMultipart()
         msg['From'] = EMAIL_ADDRESS
         msg['To'] = to_email
         msg['Subject'] = subject
         
+        # Прикрепляем HTML тело
         msg.attach(MIMEText(body_html, 'html'))
         
-        # Для Яндекс используем SSL
+        # Подключаемся к серверу Яндекса через SSL
         server = smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT)
+        server.set_debuglevel(0)  # 1 для отладки
+        
+        # Авторизуемся
         server.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
+        
+        # Отправляем письмо
         server.send_message(msg)
         server.quit()
+        
+        print(f"✅ Письмо успешно отправлено на {to_email}")
         return True
+        
+    except smtplib.SMTPAuthenticationError as e:
+        print(f"❌ Ошибка авторизации: {e}")
+        print("   Проверьте пароль приложения!")
+        return False
+    except smtplib.SMTPException as e:
+        print(f"❌ SMTP ошибка: {e}")
+        return False
     except Exception as e:
-        print(f"Ошибка отправки email: {e}")
+        print(f"❌ Ошибка отправки email: {e}")
         return False
 
 def send_verification_email(to_email, verification_code):
+    """Отправляет письмо с кодом подтверждения"""
     body = f"""
     <html>
     <body style="font-family: Arial, sans-serif; background: #f2f2f7; padding: 20px;">
@@ -81,6 +99,7 @@ def send_verification_email(to_email, verification_code):
     return send_email(to_email, "Подтверждение регистрации IT Helpdesk", body)
 
 def send_reset_email(to_email, reset_code):
+    """Отправляет письмо с кодом восстановления"""
     body = f"""
     <html>
     <body style="font-family: Arial, sans-serif; background: #f2f2f7; padding: 20px;">
@@ -103,6 +122,7 @@ def send_reset_email(to_email, reset_code):
     return send_email(to_email, "Восстановление пароля IT Helpdesk", body)
 
 def send_profile_code_email(to_email, reset_code):
+    """Отправляет письмо с кодом для смены пароля"""
     body = f"""
     <html>
     <body style="font-family: Arial, sans-serif; background: #f2f2f7; padding: 20px;">
@@ -194,20 +214,24 @@ def register():
     if request.method == 'POST':
         full_name = request.form.get('full_name', '').strip()
         username = request.form.get('username', '').strip()
-        email = request.form.get('email', '').strip()
+        email = request.form.get('email', '').strip().lower()
         password = request.form.get('password', '')
         role = request.form.get('role', 'employee')
         
+        # Валидация
         if not full_name:
             return render_template('register.html', error='Введите ФИО')
         if not email:
             return render_template('register.html', error='Введите Email')
         if len(password) < 6:
             return render_template('register.html', error='Пароль должен содержать минимум 6 символов')
+        if not username:
+            return render_template('register.html', error='Введите логин')
         
         conn = sqlite3.connect(DB_PATH)
         cur = conn.cursor()
         
+        # Проверка на существование пользователя
         cur.execute("SELECT * FROM users WHERE username = ? OR email = ?", (username, email))
         existing = cur.fetchone()
         
@@ -215,12 +239,14 @@ def register():
             conn.close()
             return render_template('register.html', error='Такой логин или Email уже существует')
         
+        # Генерируем код подтверждения
         verification_code = generate_code()
         expires = datetime.now() + timedelta(minutes=15)
         
         # Выбираем дефолтную аватарку в зависимости от роли
         default_avatar = 'emp_avatar1.png' if role == 'employee' else 'it_avatar1.png'
         
+        # Создаем пользователя
         cur.execute('''
             INSERT INTO users (username, email, password, role, full_name, avatar, is_verified, verification_code, verification_code_expires)
             VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?)
@@ -230,11 +256,14 @@ def register():
         conn.commit()
         conn.close()
         
-        # Отправляем письмо с кодом
-        if send_verification_email(email, verification_code):
+        # Пытаемся отправить письмо
+        print(f"📧 Отправка кода {verification_code} на почту {email}...")
+        email_sent = send_verification_email(email, verification_code)
+        
+        if email_sent:
             session['pending_verification_email'] = email
             session['pending_verification_user_id'] = user_id
-            flash('Код подтверждения отправлен на вашу почту!', 'success')
+            flash('✅ Код подтверждения отправлен на вашу почту!', 'success')
             return redirect(url_for('verify_email'))
         else:
             # Если письмо не отправилось, удаляем пользователя
@@ -243,13 +272,16 @@ def register():
             cur.execute("DELETE FROM users WHERE id = ?", (user_id,))
             conn.commit()
             conn.close()
-            return render_template('register.html', error='Ошибка отправки письма. Попробуйте позже или используйте другую почту.')
+            
+            return render_template('register.html', 
+                error='❌ Ошибка отправки письма. Проверьте правильность email или попробуйте позже.')
     
     return render_template('register.html')
 
 @app.route('/verify_email', methods=['GET', 'POST'])
 def verify_email():
     if 'pending_verification_email' not in session:
+        flash('Пожалуйста, зарегистрируйтесь сначала.', 'warning')
         return redirect(url_for('register'))
     
     email = session['pending_verification_email']
@@ -262,12 +294,13 @@ def verify_email():
         cur = conn.cursor()
         
         cur.execute('''
-            SELECT * FROM users WHERE email = ? AND verification_code = ? AND verification_code_expires > ?
-        ''', (email, verification_code, datetime.now()))
+            SELECT * FROM users WHERE email = ? AND verification_code = ? AND verification_code_expires > datetime('now')
+        ''', (email, verification_code))
         
         user = cur.fetchone()
         
         if user:
+            # Подтверждаем пользователя
             cur.execute('''
                 UPDATE users SET is_verified = 1, verification_code = NULL, verification_code_expires = NULL
                 WHERE email = ?
@@ -282,7 +315,9 @@ def verify_email():
             return redirect(url_for('login'))
         else:
             conn.close()
-            return render_template('verify_email.html', email=email, error='Неверный или просроченный код подтверждения')
+            return render_template('verify_email.html', 
+                email=email, 
+                error='❌ Неверный или просроченный код подтверждения. Попробуйте запросить новый код.')
     
     return render_template('verify_email.html', email=email)
 
@@ -307,7 +342,9 @@ def resend_code():
     
     send_verification_email(email, new_code)
     
-    return render_template('verify_email.html', email=email, message='Новый код отправлен на вашу почту!')
+    return render_template('verify_email.html', 
+        email=email, 
+        message='🔄 Новый код отправлен на вашу почту! Проверьте папку Спам.')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -368,16 +405,16 @@ def login():
             conn.close()
             
             if unverified and unverified['is_verified'] == 0:
-                return render_template('login.html', error='Аккаунт не подтвержден. Проверьте вашу почту.')
+                return render_template('login.html', error='❌ Аккаунт не подтвержден. Проверьте вашу почту.')
             else:
-                return render_template('login.html', error='Неверный логин или пароль')
+                return render_template('login.html', error='❌ Неверный логин или пароль')
     
     return render_template('login.html')
 
 @app.route('/forgot_password', methods=['GET', 'POST'])
 def forgot_password():
     if request.method == 'POST':
-        email = request.form.get('email', '').strip()
+        email = request.form.get('email', '').strip().lower()
         
         conn = sqlite3.connect(DB_PATH)
         conn.row_factory = sqlite3.Row
@@ -396,14 +433,14 @@ def forgot_password():
             if send_reset_email(email, reset_code):
                 conn.close()
                 session['reset_email'] = email
-                flash('Код восстановления отправлен на вашу почту!', 'success')
+                flash('✅ Код восстановления отправлен на вашу почту!', 'success')
                 return redirect(url_for('verify_reset_code'))
             else:
                 conn.close()
-                return render_template('forgot_password.html', error='Ошибка отправки письма. Попробуйте позже.')
+                return render_template('forgot_password.html', error='❌ Ошибка отправки письма. Попробуйте позже.')
         else:
             conn.close()
-            return render_template('forgot_password.html', error='Пользователь с таким Email не найден')
+            return render_template('forgot_password.html', error='❌ Пользователь с таким Email не найден')
     
     return render_template('forgot_password.html')
 
@@ -421,8 +458,9 @@ def verify_reset_code():
         conn.row_factory = sqlite3.Row
         cur = conn.cursor()
         cur.execute('''
-            SELECT * FROM users WHERE email = ? AND reset_code = ? AND reset_code_expires > ?
-        ''', (email, reset_code, datetime.now()))
+            SELECT * FROM users WHERE email = ? AND reset_code = ? AND reset_code_expires > datetime('now')
+        ''', (email, reset_code))
+        
         user = cur.fetchone()
         
         if user:
@@ -431,7 +469,7 @@ def verify_reset_code():
             return redirect(url_for('reset_password'))
         else:
             conn.close()
-            return render_template('verify_reset_code.html', error='Неверный или просроченный код. Попробуйте снова.')
+            return render_template('verify_reset_code.html', error='❌ Неверный или просроченный код. Попробуйте снова.')
     
     return render_template('verify_reset_code.html')
 
@@ -445,10 +483,10 @@ def reset_password():
         confirm_password = request.form.get('confirm_password', '')
         
         if len(new_password) < 6:
-            return render_template('reset_password.html', error='Пароль должен быть минимум 6 символов')
+            return render_template('reset_password.html', error='❌ Пароль должен быть минимум 6 символов')
         
         if new_password != confirm_password:
-            return render_template('reset_password.html', error='Пароли не совпадают')
+            return render_template('reset_password.html', error='❌ Пароли не совпадают')
         
         email = session.get('reset_email', '')
         
@@ -559,7 +597,7 @@ def profile():
                 session['full_name'] = new_full_name
                 session['username'] = new_username
                 conn.close()
-                return render_template('profile.html', user=user, available_avatars=available_avatars, success='Данные обновлены!')
+                return render_template('profile.html', user=user, available_avatars=available_avatars, success='✅ Данные обновлены!')
             except sqlite3.IntegrityError:
                 conn.close()
                 return render_template('profile.html', user=user, available_avatars=available_avatars, error='Такой логин уже существует')
@@ -577,9 +615,9 @@ def profile():
             conn.close()
             
             if send_profile_code_email(email, reset_code):
-                return render_template('profile.html', user=user, available_avatars=available_avatars, show_code_input=True, message='Код отправлен на вашу почту!')
+                return render_template('profile.html', user=user, available_avatars=available_avatars, show_code_input=True, message='✅ Код отправлен на вашу почту!')
             else:
-                return render_template('profile.html', user=user, available_avatars=available_avatars, error='Ошибка отправки письма')
+                return render_template('profile.html', user=user, available_avatars=available_avatars, error='❌ Ошибка отправки письма')
         
         elif action == 'change_password':
             reset_code = request.form.get('reset_code', '').strip()
@@ -596,8 +634,8 @@ def profile():
             conn.row_factory = sqlite3.Row
             cur = conn.cursor()
             cur.execute('''
-                SELECT * FROM users WHERE id = ? AND reset_code = ? AND reset_code_expires > ?
-            ''', (session['user_id'], reset_code, datetime.now()))
+                SELECT * FROM users WHERE id = ? AND reset_code = ? AND reset_code_expires > datetime('now')
+            ''', (session['user_id'], reset_code))
             user_check = cur.fetchone()
             
             if user_check:
@@ -605,10 +643,10 @@ def profile():
                            (new_password, session['user_id']))
                 conn.commit()
                 conn.close()
-                return render_template('profile.html', user=user, available_avatars=available_avatars, success='Пароль успешно изменен!')
+                return render_template('profile.html', user=user, available_avatars=available_avatars, success='✅ Пароль успешно изменен!')
             else:
                 conn.close()
-                return render_template('profile.html', user=user, available_avatars=available_avatars, show_code_input=True, error='Неверный или просроченный код')
+                return render_template('profile.html', user=user, available_avatars=available_avatars, show_code_input=True, error='❌ Неверный или просроченный код')
     
     return render_template('profile.html', user=user, available_avatars=available_avatars)
 
@@ -754,6 +792,7 @@ if __name__ == '__main__':
     
     print("=" * 60)
     print(f"🚀 СЕРВЕР ЗАПУЩЕН на порту {port}!")
+    print(f"📱 Доступен по адресу: http://0.0.0.0:{port}")
     print("=" * 60)
     print("📝 ПЕРВЫЙ ПОЛЬЗОВАТЕЛЬ ДОЛЖЕН ЗАРЕГИСТРИРОВАТЬСЯ!")
     print("=" * 60)
