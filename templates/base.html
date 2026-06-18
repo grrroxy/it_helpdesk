@@ -1,117 +1,785 @@
-{% extends 'base.html' %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <title>{% block title %}IT Helpdesk{% endblock %}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
 
-{% block title %}Заявки — IT Helpdesk{% endblock %}
+        :root {
+            --bg-primary: #f2f2f7;
+            --bg-secondary: #ffffff;
+            --bg-card: #ffffff;
+            --text-primary: #000000;
+            --text-secondary: #6c6c70;
+            --text-muted: #8e8e93;
+            --border-color: #c6c6c8;
+            --input-bg: #f2f2f7;
+            --shadow: 0 2px 12px rgba(0,0,0,0.08);
+            --shadow-lg: 0 8px 30px rgba(0,0,0,0.12);
+            --accent-primary: #667eea;
+            --accent-secondary: #764ba2;
+            --header-bg: rgba(255,255,255,0.96);
+            --status-bg: #e5e5ea;
+            --radius: 14px;
+            --radius-lg: 24px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
 
-{% block content %}
-<!-- Статистика -->
-<div class="stats-grid">
-    <div class="stat-item">
-        <div class="number">{{ tickets|length }}</div>
-        <div class="label">📋 Всего</div>
-    </div>
-    <div class="stat-item">
-        <div class="number">{{ tickets|selectattr('status', 'equalto', 'open')|list|length }}</div>
-        <div class="label">🟠 Открыто</div>
-    </div>
-    <div class="stat-item">
-        <div class="number">{{ tickets|selectattr('status', 'equalto', 'in_progress')|list|length }}</div>
-        <div class="label">🔵 В работе</div>
-    </div>
-    <div class="stat-item">
-        <div class="number">{{ tickets|selectattr('status', 'equalto', 'closed')|list|length }}</div>
-        <div class="label">✅ Выполнено</div>
-    </div>
-</div>
+        body.dark {
+            --bg-primary: #000000;
+            --bg-secondary: #1c1c1e;
+            --bg-card: #1c1c1e;
+            --text-primary: #ffffff;
+            --text-secondary: #8e8e93;
+            --text-muted: #636366;
+            --border-color: #38383a;
+            --input-bg: #1c1c1e;
+            --shadow: 0 2px 12px rgba(0,0,0,0.3);
+            --shadow-lg: 0 8px 30px rgba(0,0,0,0.4);
+            --header-bg: rgba(0,0,0,0.96);
+            --status-bg: #2c2c2e;
+        }
 
-<!-- Кнопка создания (только для сотрудников) -->
-{% if role in ['employee', 'admin'] %}
-<div class="card">
-    <div class="card-title">✏️ Новая заявка</div>
-    <form method="POST" action="/add_ticket">
-        <div class="form-group">
-            <input type="text" name="title" placeholder="Тема заявки" required>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, Helvetica, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            transition: background 0.3s, color 0.3s;
+            padding-bottom: 80px;
+        }
+
+        /* ===== ШАПКА ===== */
+        .app-header {
+            background: var(--header-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 0.5px solid var(--border-color);
+            padding: 12px 16px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo h1 {
+            font-size: 1.4rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        .logo p {
+            font-size: 0.6rem;
+            color: var(--text-muted);
+            margin-top: -2px;
+            letter-spacing: 0.5px;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .header-actions .btn-icon {
+            background: var(--input-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 30px;
+            padding: 8px 12px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: var(--transition);
+            color: var(--text-primary);
+            text-decoration: none;
+        }
+
+        .header-actions .btn-icon:hover {
+            background: var(--accent-primary);
+            color: white;
+            border-color: var(--accent-primary);
+        }
+
+        .header-actions .btn-icon.logout {
+            background: rgba(255, 69, 58, 0.12);
+            color: #ff453a;
+            border-color: rgba(255, 69, 58, 0.2);
+        }
+
+        .header-actions .btn-icon.logout:hover {
+            background: #ff453a;
+            color: white;
+            border-color: #ff453a;
+        }
+
+        .user-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--input-bg);
+            padding: 4px 12px 4px 4px;
+            border-radius: 30px;
+            border: 1px solid var(--border-color);
+            text-decoration: none;
+            transition: var(--transition);
+            cursor: pointer;
+        }
+
+        .user-badge:hover {
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+        }
+
+        .user-badge .avatar-mini {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            object-fit: cover;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+        }
+
+        .user-badge .user-name {
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            max-width: 80px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* ===== ОСНОВНОЙ КОНТЕНТ ===== */
+        .main-content {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 16px;
+        }
+
+        /* ===== КАРТОЧКИ ===== */
+        .card {
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            margin-bottom: 16px;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+        }
+
+        .card:hover {
+            box-shadow: var(--shadow-lg);
+        }
+
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* ===== ФОРМЫ ===== */
+        .form-group {
+            margin-bottom: 14px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 16px;
+            background: var(--input-bg);
+            border: 2px solid var(--border-color);
+            border-radius: var(--radius);
+            color: var(--text-primary);
+            font-size: 1rem;
+            font-family: inherit;
+            transition: var(--transition);
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.15);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .btn-primary {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border: none;
+            border-radius: var(--radius);
+            color: white;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.35);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-sm {
+            padding: 8px 16px;
+            font-size: 0.85rem;
+            border-radius: var(--radius);
+            border: none;
+            cursor: pointer;
+            transition: var(--transition);
+            font-weight: 500;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .btn-accept { background: #0a84ff; color: white; }
+        .btn-complete { background: #30d158; color: white; }
+        .btn-reject { background: #ff453a; color: white; }
+        .btn-delete { background: #8e8e93; color: white; }
+        .btn-disabled { background: #48484a; color: #8e8e93; cursor: not-allowed; pointer-events: none; }
+
+        .btn-sm:hover {
+            transform: translateY(-1px);
+            opacity: 0.9;
+        }
+
+        /* ===== ЗАЯВКИ ===== */
+        .ticket-card {
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            padding: 16px;
+            margin-bottom: 12px;
+            border: 1px solid var(--border-color);
+            transition: var(--transition);
+        }
+
+        .ticket-card:hover {
+            border-color: var(--accent-primary);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .ticket-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .ticket-title {
+            font-size: 1.05rem;
+            font-weight: 600;
+        }
+
+        .ticket-id {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .status-open { background: rgba(255, 159, 10, 0.15); color: #ff9f0a; }
+        .status-in_progress { background: rgba(10, 132, 255, 0.15); color: #0a84ff; }
+        .status-closed { background: rgba(48, 209, 88, 0.15); color: #30d158; }
+        .status-rejected { background: rgba(255, 69, 58, 0.15); color: #ff453a; }
+
+        .ticket-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin: 6px 0 10px 0;
+        }
+
+        .ticket-meta span {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .ticket-desc {
+            background: var(--input-bg);
+            padding: 12px;
+            border-radius: var(--radius);
+            font-size: 0.85rem;
+            margin-bottom: 12px;
+            line-height: 1.5;
+        }
+
+        .ticket-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .ticket-actions .btn-sm {
+            flex: 1;
+            min-width: 80px;
+            text-align: center;
+        }
+
+        /* ===== СТАТИСТИКА ===== */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .stat-item {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 14px;
+            text-align: center;
+            border: 1px solid var(--border-color);
+        }
+
+        .stat-item .number {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--accent-primary);
+        }
+
+        .stat-item .label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        /* ===== АВАТАРКИ ===== */
+        .avatar-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            justify-content: center;
+            margin: 12px 0;
+        }
+
+        .avatar-option {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            object-fit: cover;
+            cursor: pointer;
+            border: 3px solid transparent;
+            transition: var(--transition);
+        }
+
+        .avatar-option:hover {
+            transform: scale(1.08);
+        }
+
+        .avatar-option.selected {
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px var(--accent-primary);
+        }
+
+        .avatar-large {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            flex-shrink: 0;
+        }
+
+        /* ===== ПРОФИЛЬ ===== */
+        .profile-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+
+        .profile-header .info h2 {
+            font-size: 1.3rem;
+        }
+
+        .profile-header .info p {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        /* ===== АУТЕНТИФИКАЦИЯ ===== */
+        .auth-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 80vh;
+            padding: 20px;
+        }
+
+        .auth-card {
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            padding: 32px 28px;
+            max-width: 420px;
+            width: 100%;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .auth-card .logo-center {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .auth-card .logo-center h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .auth-card .logo-center p {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+
+        .auth-card .sub {
+            text-align: center;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+            font-size: 0.85rem;
+        }
+
+        .auth-card .form-group {
+            margin-bottom: 12px;
+        }
+
+        .auth-card .btn-primary {
+            margin-top: 4px;
+        }
+
+        .auth-card .auth-link {
+            text-align: center;
+            margin-top: 16px;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        .auth-card .auth-link a {
+            color: var(--accent-primary);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .auth-card .auth-link a:hover {
+            text-decoration: underline;
+        }
+
+        /* ===== FLASH ===== */
+        .flash-messages {
+            margin-bottom: 16px;
+        }
+
+        .flash {
+            padding: 12px 16px;
+            border-radius: var(--radius);
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            border-left: 4px solid;
+        }
+
+        .flash-success { background: rgba(48, 209, 88, 0.12); color: #30d158; border-color: #30d158; }
+        .flash-error { background: rgba(255, 69, 58, 0.12); color: #ff453a; border-color: #ff453a; }
+        .flash-info { background: rgba(10, 132, 255, 0.12); color: #0a84ff; border-color: #0a84ff; }
+
+        /* ===== ПУСТОЕ СОСТОЯНИЕ ===== */
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-muted);
+        }
+
+        .empty-state .icon {
+            font-size: 3rem;
+            margin-bottom: 12px;
+            opacity: 0.5;
+        }
+
+        /* ===== НИЖНЯЯ НАВИГАЦИЯ (Mobile) ===== */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--header-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            display: flex;
+            justify-content: space-around;
+            padding: 6px 12px 12px 12px;
+            border-top: 0.5px solid var(--border-color);
+            z-index: 100;
+        }
+
+        .bottom-nav .nav-item {
+            text-align: center;
+            padding: 6px 0;
+            flex: 1;
+            color: var(--text-muted);
+            font-size: 0.6rem;
+            cursor: pointer;
+            background: none;
+            border: none;
+            transition: var(--transition);
+            text-decoration: none;
+        }
+
+        .bottom-nav .nav-item .nav-icon {
+            font-size: 1.5rem;
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        .bottom-nav .nav-item.active {
+            color: var(--accent-primary);
+        }
+
+        .bottom-nav .nav-item:hover {
+            color: var(--accent-primary);
+        }
+
+        .bottom-nav .nav-item.logout-item {
+            color: #ff453a;
+        }
+
+        /* ===== АДАПТИВНОСТЬ ===== */
+        @media (max-width: 600px) {
+            .app-header {
+                padding: 10px 12px;
+            }
+            .logo h1 {
+                font-size: 1.2rem;
+            }
+            .main-content {
+                padding: 12px;
+            }
+            .card {
+                padding: 16px;
+                border-radius: var(--radius);
+            }
+            .card-title {
+                font-size: 1rem;
+            }
+            .ticket-card {
+                padding: 12px;
+            }
+            .ticket-title {
+                font-size: 0.95rem;
+            }
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .profile-header {
+                flex-direction: column;
+                text-align: center;
+            }
+            .auth-card {
+                padding: 24px 20px;
+            }
+            .auth-card .logo-center h1 {
+                font-size: 1.6rem;
+            }
+            .bottom-nav .nav-item .nav-icon {
+                font-size: 1.3rem;
+            }
+            .bottom-nav .nav-item {
+                font-size: 0.55rem;
+            }
+            .user-badge .user-name {
+                max-width: 60px;
+                font-size: 0.7rem;
+            }
+            .header-actions .btn-icon {
+                padding: 6px 10px;
+                font-size: 0.85rem;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .main-content {
+                padding: 8px;
+            }
+            .card {
+                padding: 12px;
+            }
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 8px;
+            }
+            .stat-item .number {
+                font-size: 1.4rem;
+            }
+            .avatar-option {
+                width: 44px;
+                height: 44px;
+            }
+        }
+
+        @media (min-width: 768px) {
+            .main-content {
+                padding: 24px;
+            }
+            .card {
+                padding: 24px;
+            }
+            .bottom-nav {
+                display: none;
+            }
+            body {
+                padding-bottom: 0;
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .main-content {
+                max-width: 1000px;
+                padding: 32px;
+            }
+            .stats-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        /* ===== УТИЛИТЫ ===== */
+        .hidden { display: none !important; }
+        .text-center { text-align: center; }
+        .mt-8 { margin-top: 8px; }
+        .mt-16 { margin-top: 16px; }
+        .gap-8 { gap: 8px; }
+        .flex { display: flex; }
+        .flex-wrap { flex-wrap: wrap; }
+        .items-center { align-items: center; }
+        .justify-between { justify-content: space-between; }
+    </style>
+</head>
+<body>
+    <!-- ШАПКА -->
+    <header class="app-header">
+        <div class="logo">
+            <h1>IT HELPDESK</h1>
+            <p>ООО «МАГНАТ»</p>
         </div>
-        <div class="form-group" style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
-            <input type="text" name="location" placeholder="📍 Кабинет">
-            <select name="priority">
-                <option value="Низкий">Низкий</option>
-                <option value="Средний" selected>Средний</option>
-                <option value="Высокий">Высокий</option>
-            </select>
-        </div>
-        <div class="form-group">
-            <textarea name="description" placeholder="Опишите проблему..." required></textarea>
-        </div>
-        <button type="submit" class="btn-primary">📨 Отправить</button>
-    </form>
-</div>
-{% endif %}
-
-<!-- Список заявок -->
-{% if tickets %}
-    {% for ticket in tickets %}
-    <div class="ticket-card">
-        <div class="ticket-header">
-            <div>
-                <div class="ticket-title">{{ ticket.title }}</div>
-                <div class="ticket-id">№{{ ticket.id }}</div>
-            </div>
-            <div class="status-badge status-{{ ticket.status }}">
-                {% if ticket.status == 'open' %}🟠 Открыта
-                {% elif ticket.status == 'in_progress' %}🔵 В работе
-                {% elif ticket.status == 'closed' %}✅ Выполнена
-                {% else %}❌ Отказана{% endif %}
-            </div>
-        </div>
-
-        <div class="ticket-meta">
-            <span>👤 {{ ticket.created_by_name or ticket.created_by }}</span>
-            <span>📍 {{ ticket.location or '—' }}</span>
-            <span>⚡ {{ ticket.priority or 'Средний' }}</span>
-            <span>🕒 {{ ticket.created_at[:16] if ticket.created_at else '' }}</span>
-        </div>
-
-        <div class="ticket-desc">{{ ticket.description }}</div>
-
-        {% if ticket.accepted_by %}
-            <div style="font-size:0.75rem; padding:6px 12px; border-radius:var(--radius); background:var(--input-bg); margin-bottom:12px;">
-                {% if ticket.status == 'in_progress' %}
-                    🔧 Взял: {{ ticket.accepted_by_name or ticket.accepted_by }}
-                {% elif ticket.status == 'closed' %}
-                    ✅ Выполнил: {{ ticket.accepted_by_name or ticket.accepted_by }}
-                {% elif ticket.status == 'rejected' %}
-                    ❌ Отказал: {{ ticket.accepted_by_name or ticket.accepted_by }}
-                {% endif %}
-            </div>
-        {% endif %}
-
-        <div class="ticket-actions">
-            {% if role in ['it_specialist', 'admin'] %}
-                {% if ticket.status == 'open' %}
-                    <a href="/take/{{ ticket.id }}" class="btn-sm btn-accept">🔧 Взять</a>
-                    <a href="/reject/{{ ticket.id }}" class="btn-sm btn-reject">❌ Отказать</a>
-                    <a href="/delete/{{ ticket.id }}" class="btn-sm btn-delete" onclick="return confirm('Удалить?')">🗑️</a>
-                {% elif ticket.status == 'in_progress' and ticket.accepted_by == username %}
-                    <a href="/complete/{{ ticket.id }}" class="btn-sm btn-complete">✔️ Выполнить</a>
-                    <a href="/reject/{{ ticket.id }}" class="btn-sm btn-reject">❌ Отказать</a>
-                    <a href="/delete/{{ ticket.id }}" class="btn-sm btn-delete" onclick="return confirm('Удалить?')">🗑️</a>
-                {% elif ticket.status in ['closed', 'rejected'] %}
-                    <span class="btn-sm btn-disabled">
-                        {% if ticket.status == 'closed' %}✅ Выполнена{% else %}❌ Отказана{% endif %}
-                    </span>
-                    <a href="/delete/{{ ticket.id }}" class="btn-sm btn-delete" onclick="return confirm('Удалить?')">🗑️</a>
-                {% endif %}
-            {% elif role == 'employee' and ticket.created_by == username and ticket.status == 'open' %}
-                <a href="/delete/{{ ticket.id }}" class="btn-sm btn-delete" onclick="return confirm('Удалить заявку?')">🗑️ Удалить</a>
+        <div class="header-actions">
+            {% if session.get('user_id') %}
+                <a href="/profile" class="user-badge">
+                    <img src="/static/avatars/{{ session.get('avatar', 'emp_avatar1.png') }}" class="avatar-mini" alt="Avatar" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2232%22 height=%2232%22%3E%3Crect width=%2232%22 height=%2232%22 fill=%22667eea%22/%3E%3Ctext x=%2216%22 y=%2222%22 text-anchor=%22middle%22 fill=%22white%22 font-size=%2216%22%3E{{ session.get('full_name', 'U')[0] }}%3C/text%3E%3C/svg%3E'">
+                    <span class="user-name">{{ session.get('full_name', 'User') }}</span>
+                </a>
+                <button class="btn-icon theme-toggle" onclick="toggleTheme()">🌓</button>
+                <a href="/logout" class="btn-icon logout">🚪</a>
+            {% else %}
+                <button class="btn-icon theme-toggle" onclick="toggleTheme()">🌓</button>
             {% endif %}
         </div>
-    </div>
-    {% endfor %}
-{% else %}
-    <div class="empty-state">
-        <div class="icon">📭</div>
-        <div style="font-size:1.1rem; font-weight:500;">Нет заявок</div>
-        <div style="font-size:0.85rem; margin-top:4px;">Создайте первую заявку</div>
-    </div>
-{% endif %}
-{% endblock %}
+    </header>
+
+    <!-- ОСНОВНОЙ КОНТЕНТ -->
+    <main class="main-content">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="flash flash-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- НИЖНЯЯ НАВИГАЦИЯ (только для мобильных) -->
+    {% if session.get('user_id') %}
+    <nav class="bottom-nav">
+        <a href="/tickets" class="nav-item {% if request.path == '/tickets' %}active{% endif %}">
+            <span class="nav-icon">📋</span>
+            <span>Заявки</span>
+        </a>
+        {% if session.get('role') in ['employee', 'admin'] %}
+        <a href="/tickets" class="nav-item">
+            <span class="nav-icon">➕</span>
+            <span>Создать</span>
+        </a>
+        {% endif %}
+        <a href="/profile" class="nav-item {% if request.path == '/profile' %}active{% endif %}">
+            <span class="nav-icon">👤</span>
+            <span>Профиль</span>
+        </a>
+        <a href="/logout" class="nav-item logout-item">
+            <span class="nav-icon">🚪</span>
+            <span>Выйти</span>
+        </a>
+    </nav>
+    {% endif %}
+
+    <script>
+        function toggleTheme() {
+            document.body.classList.toggle('dark');
+            const btn = document.querySelector('.theme-toggle');
+            if (document.body.classList.contains('dark')) {
+                btn.innerHTML = '☀️';
+                localStorage.setItem('theme', 'dark');
+            } else {
+                btn.innerHTML = '🌓';
+                localStorage.setItem('theme', 'light');
+            }
+        }
+
+        if (localStorage.getItem('theme') === 'dark') {
+            document.body.classList.add('dark');
+            const btn = document.querySelector('.theme-toggle');
+            if (btn) btn.innerHTML = '☀️';
+        }
+    </script>
+</body>
+</html>
