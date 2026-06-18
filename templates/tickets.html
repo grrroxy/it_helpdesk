@@ -52,3 +52,64 @@
     {% for ticket in tickets %}
     <div class="ticket-card">
         <div class="ticket-header">
+            <div>
+                <div class="ticket-title">{{ ticket.title }}</div>
+                <div class="ticket-id">№{{ ticket.id }}</div>
+            </div>
+            <div class="status-badge status-{{ ticket.status }}">
+                {% if ticket.status == 'open' %}Открыта
+                {% elif ticket.status == 'in_progress' %}В работе
+                {% elif ticket.status == 'closed' %}Выполнена
+                {% else %}Отказана{% endif %}
+            </div>
+        </div>
+
+        <div class="ticket-meta">
+            <span>👤 {{ ticket.created_by_name or ticket.created_by }}</span>
+            <span>📍 {{ ticket.location or '—' }}</span>
+            <span>⚡ {{ ticket.priority or 'Средний' }}</span>
+            <span>🕒 {{ ticket.created_at[:16] if ticket.created_at else '' }}</span>
+        </div>
+
+        <div class="ticket-desc">{{ ticket.description }}</div>
+
+        {% if ticket.accepted_by %}
+            <div style="font-size:0.75rem; padding:6px 12px; border-radius:var(--radius); background:var(--input-bg); margin-bottom:12px; border:1px solid var(--border-color);">
+                {% if ticket.status == 'in_progress' %}
+                    🔧 Взял: {{ ticket.accepted_by_name or ticket.accepted_by }}
+                {% elif ticket.status == 'closed' %}
+                    ✅ Выполнил: {{ ticket.accepted_by_name or ticket.accepted_by }}
+                {% elif ticket.status == 'rejected' %}
+                    ❌ Отказал: {{ ticket.accepted_by_name or ticket.accepted_by }}
+                {% endif %}
+            </div>
+        {% endif %}
+
+        <div class="ticket-actions">
+            {% if role in ['it_specialist', 'admin'] %}
+                {% if ticket.status == 'open' %}
+                    <a href="/take/{{ ticket.id }}" class="btn-sm btn-accept">Взять в работу</a>
+                    <a href="/reject/{{ ticket.id }}" class="btn-sm btn-reject">Отказать</a>
+                    <a href="/delete/{{ ticket.id }}" class="btn-sm btn-delete" onclick="return confirm('Удалить заявку?')">🗑️ Удалить</a>
+                {% elif ticket.status == 'in_progress' and ticket.accepted_by == username %}
+                    <a href="/complete/{{ ticket.id }}" class="btn-sm btn-complete">✅ Выполнить</a>
+                    <a href="/reject/{{ ticket.id }}" class="btn-sm btn-reject">Отказать</a>
+                    <a href="/delete/{{ ticket.id }}" class="btn-sm btn-delete" onclick="return confirm('Удалить заявку?')">🗑️ Удалить</a>
+                {% elif ticket.status in ['closed', 'rejected'] %}
+                    <span class="btn-sm btn-disabled">{% if ticket.status == 'closed' %}✅ Выполнена{% else %}❌ Отказана{% endif %}</span>
+                    <a href="/delete/{{ ticket.id }}" class="btn-sm btn-delete" onclick="return confirm('Удалить заявку?')">🗑️ Удалить</a>
+                {% endif %}
+            {% elif role == 'employee' and ticket.created_by == username and ticket.status == 'open' %}
+                <a href="/delete/{{ ticket.id }}" class="btn-sm btn-delete" onclick="return confirm('Удалить заявку?')">🗑️ Удалить</a>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+{% else %}
+    <div class="empty-state">
+        <div class="icon">📭</div>
+        <h3>Нет заявок</h3>
+        <p>Создайте первую заявку</p>
+    </div>
+{% endif %}
+{% endblock %}
