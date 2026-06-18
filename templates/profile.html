@@ -61,4 +61,51 @@
     <div class="card-title">🔐 Смена пароля</div>
     <p style="color:var(--text-muted); font-size:0.85rem;">Функция временно недоступна. Скоро появится!</p>
 </div>
+
+<!-- ===== ПЕРЕКЛЮЧАТЕЛЬ ТЕМЫ ===== -->
+<div class="card">
+    <div class="card-title">🎨 Внешний вид</div>
+    <div style="display:flex; flex-wrap:wrap; align-items:center; gap:16px;">
+        <span style="color:var(--text-secondary); font-size:0.9rem;">Тема оформления:</span>
+        <div class="theme-toggle-group">
+            <button class="theme-btn {% if request.cookies.get('theme') != 'light' %}active{% endif %}" data-theme="dark" onclick="setTheme('dark')">
+                🌙 Тёмная
+            </button>
+            <button class="theme-btn {% if request.cookies.get('theme') == 'light' %}active{% endif %}" data-theme="light" onclick="setTheme('light')">
+                ☀️ Светлая
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // При загрузке страницы обновляем активные кнопки
+    document.addEventListener('DOMContentLoaded', function() {
+        const currentTheme = localStorage.getItem('theme') || 'dark';
+        document.querySelectorAll('.theme-btn').forEach(btn => {
+            btn.classList.remove('active');
+            if (btn.dataset.theme === currentTheme) {
+                btn.classList.add('active');
+            }
+        });
+    });
+
+    // Переопределяем setTheme из base.html для обновления кнопок
+    const originalSetTheme = window.setTheme;
+    window.setTheme = function(theme) {
+        if (theme === 'light') {
+            document.body.classList.add('light');
+            localStorage.setItem('theme', 'light');
+        } else {
+            document.body.classList.remove('light');
+            localStorage.setItem('theme', 'dark');
+        }
+        document.querySelectorAll('.theme-btn').forEach(btn => {
+            btn.classList.remove('active');
+            if (btn.dataset.theme === theme) {
+                btn.classList.add('active');
+            }
+        });
+    };
+</script>
 {% endblock %}
