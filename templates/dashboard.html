@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>IT Helpdesk — Дашборд</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0f0f1a;
+            --bg-secondary: #1a1a2e;
+            --bg-card: #16213e;
+            --bg-card-hover: #1e2a4a;
+            --text-primary: #ffffff;
+            --text-secondary: #a0aec0;
+            --text-muted: #4a5568;
+            --accent-primary: #667eea;
+            --accent-secondary: #764ba2;
+            --accent-success: #48bb78;
+            --accent-warning: #ed8936;
+            --accent-danger: #f56565;
+            --accent-info: #4299e1;
+            --border-color: rgba(255,255,255,0.08);
+            --glow: 0 0 20px rgba(102, 126, 234, 0.3);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            overflow-x: hidden;
+        }
+
+        /* Анимированный градиентный фон */
+        .bg-gradient-animated {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -2;
+            background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 50%, #16213e 100%);
+        }
+
+        .bg-gradient-animated::before {
+            content: '';
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            top: -50%;
+            left: -50%;
+            background: radial-gradient(circle at 30% 40%, rgba(102,126,234,0.15) 0%, transparent 50%);
+            animation: float 20s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            33% { transform: translate(2%, 1%) rotate(1deg); }
+            66% { transform: translate(-1%, 2%) rotate(-1deg); }
+        }
+
+        /* Навбар */
+        .navbar {
+            background: rgba(26, 26, 46, 0.8);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo h1 {
+            font-size: 1.8rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        .logo p {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            letter-spacing: 1px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 1.5rem;
+            align-items: center;
+        }
+
+        .nav-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s;
+            padding: 0.5rem 1rem;
+            border-radius: 12px;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            color: var(--accent-primary);
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            background: rgba(255,255,255,0.05);
+            padding: 0.5rem 1.2rem;
+            border-radius: 40px;
+        }
+
+        .avatar {
+            width: 38px;
+            height: 38px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+        }
+
+        .logout-btn {
+            background: rgba(245, 101, 101, 0.2);
+            color: #f56565;
+            padding: 0.5rem 1rem;
+            border-radius: 30px;
+            text-decoration: none;
+            font-size: 0.85rem;
+            transition: all 0.3s;
+        }
+
+        .logout-btn:hover {
+            background: rgba(245, 101, 101, 0.4);
+        }
+
+        /* Основной контент */
+        .main-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Welcome Banner */
+        .welcome-banner {
+            background: linear-gradient(135deg, rgba(102,126,234,0.2), rgba(118,75,162,0.2));
+            border-radius: 28px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border: 1px solid rgba(102,126,234,0.3);
+            backdrop-filter: blur(10px);
+        }
+
+        .welcome-banner h2 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .welcome-banner p {
+            color: var(--text-secondary);
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border-radius: 24px;
+            padding: 1.5rem;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--glow);
+            border-color: rgba(102,126,234,0.5);
+        }
+
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .stat-icon {
+            font-size: 2rem;
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+
+        /* Charts Row */
+        .charts-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .chart-card {
+            background: var(--bg-card);
+            border-radius: 24px;
+            padding: 1.5rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .chart-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--text-secondary);
+        }
+
+        canvas {
+            max-height: 250px;
+        }
+
+        /* Recent Tickets & Activity */
+        .bottom-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        .info-card {
+            background: var(--bg-card);
+            border-radius: 24px;
+            padding: 1.5rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-header h3 {
+            font-size: 1.2rem;
+        }
+
+        .view-all {
+            color: var(--accent-primary);
+            text-decoration: none;
+            font-size: 0.85rem;
+        }
+
+        .ticket-item, .activity-item {
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .ticket-title {
+            font-weight: 500;
+        }
+
+        .ticket-status {
+            font-size: 0.7rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+
+        .status-open { background: rgba(237, 137, 54, 0.2); color: #ed8936; }
+        .status-in_progress { background: rgba(66, 153, 225, 0.2); color: #4299e1; }
+        .status-closed { background: rgba(72, 187, 120, 0.2); color: #48bb78; }
+        .status-rejected { background: rgba(245, 101, 101, 0.2); color: #f56565; }
+
+        .activity-text {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .activity-time {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+
+        @media (max-width: 768px) {
+            .charts-row, .bottom-row {
+                grid-template-columns: 1fr;
+            }
+            .nav-links {
+                display: none;
+            }
+            .main-content {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="bg-gradient-animated"></div>
+
+<!-- Навигация -->
+<nav class="navbar">
+    <div class="nav-container">
+        <div class="logo">
+            <h1>IT HELPDESK</h1>
+            <p>ООО «МАГНАТ» • POWERED BY AI</p>
+        </div>
+        <div class="nav-links">
+            <a href="/" class="nav-link active">📊 Дашборд</a>
+            <a href="/tickets" class="nav-link">🎫 Заявки</a>
+            {% if role == 'employee' or role == 'admin' %}
+            <a href="/tickets" class="nav-link">➕ Создать</a>
+            {% endif %}
+        </div>
+        <div class="user-info">
+            <div class="avatar">{{ full_name[0] }}</div>
+            <span>{{ full_name }}</span>
+            <a href="/logout" class="logout-btn">Выйти</a>
+        </div>
+    </div>
+</nav>
+
+<main class="main-content">
+    <!-- Welcome Banner -->
+    <div class="welcome-banner">
+        <h2>👋 Добро пожаловать, {{ full_name }}!</h2>
+        <p>Система управления IT-заявками • Сегодня {{ now|default('') }}</p>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-header">
+                <span class="stat-icon">📋</span>
+            </div>
+            <div class="stat-value">{{ total_tickets }}</div>
+            <div class="stat-label">Всего заявок</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-header">
+                <span class="stat-icon">🟠</span>
+            </div>
+            <div class="stat-value">{{ open_tickets }}</div>
+            <div class="stat-label">Открытых</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-header">
+                <span class="stat-icon">🔵</span>
+            </div>
+            <div class="stat-value">{{ in_progress_tickets }}</div>
+            <div class="stat-label">В работе</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-header">
+                <span class="stat-icon">✅</span>
+            </div>
+            <div class="stat-value">{{ closed_tickets }}</div>
+            <div class="stat-label">Выполненных</div>
+        </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="charts-row">
+        <div class="chart-card">
+            <div class="chart-title">📈 Динамика заявок (7 дней)</div>
+            <canvas id="trendChart"></canvas>
+        </div>
+        <div class="chart-card">
+            <div class="chart-title">🎯 Приоритеты заявок</div>
+            <canvas id="priorityChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Recent Tickets & Activity -->
+    <div class="bottom-row">
+        <div class="info-card">
+            <div class="card-header">
+                <h3>🆕 Последние заявки</h3>
+                <a href="/tickets" class="view-all">Все заявки →</a>
+            </div>
+            {% for ticket in recent_tickets %}
+            <div class="ticket-item">
+                <div>
+                    <div class="ticket-title">{{ ticket.title }}</div>
+                    <div class="activity-time">{{ ticket.created_at[:16] }}</div>
+                </div>
+                <span class="ticket-status status-{{ ticket.status }}">{{ ticket.status }}</span>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="info-card">
+            <div class="card-header">
+                <h3>📝 Активность системы</h3>
+                <span style="font-size: 0.7rem; color: var(--text-muted);">Live</span>
+            </div>
+            {% for activity in activities %}
+            <div class="activity-item">
+                <div>
+                    <div class="activity-text">{{ activity.details or activity.action }}</div>
+                    <div class="activity-time">{{ activity.user_name }} • {{ activity.timestamp[11:16] }}</div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</main>
+
+<script>
+    // График тренда
+    const ctx1 = document.getElementById('trendChart').getContext('2d');
+    new Chart(ctx1, {
+        type: 'line',
+        data: {
+            labels: {{ chart_labels|tojson }},
+            datasets: [{
+                label: 'Заявки',
+                data: {{ chart_data|tojson }},
+                borderColor: '#667eea',
+                backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.4,
+                pointBackgroundColor: '#764ba2',
+                pointBorderColor: '#fff',
+                pointRadius: 4,
+                pointHoverRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: { labels: { color: '#a0aec0' } }
+            },
+            scales: {
+                y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#a0aec0' } },
+                x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#a0aec0' } }
+            }
+        }
+    });
+
+    // График приоритетов
+    const ctx2 = document.getElementById('priorityChart').getContext('2d');
+    const priorityLabels = [];
+    const priorityValues = [];
+    {% for p in priorities %}
+    priorityLabels.push('{{ p.priority }}');
+    priorityValues.push({{ p.count }});
+    {% endfor %}
+    
+    new Chart(ctx2, {
+        type: 'doughnut',
+        data: {
+            labels: priorityLabels,
+            datasets: [{
+                data: priorityValues,
+                backgroundColor: ['#ed8936', '#4299e1', '#48bb78', '#f56565'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: { position: 'bottom', labels: { color: '#a0aec0' } }
+            }
+        }
+    });
+</script>
+</body>
+</html>

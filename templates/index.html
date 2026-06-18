@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <title>IT Helpdesk</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        :root {
+            --bg: #f2f2f7;
+            --surface: #ffffff;
+            --text: #000000;
+            --text-secondary: #8e8e93;
+            --border: #c6c6c8;
+            --shadow: none;
+            --input-bg: #f2f2f7;
+            --card-bg: #ffffff;
+            --header-bg: rgba(255,255,255,0.96);
+            --status-bg: #e5e5ea;
+        }
+
+        body.dark {
+            --bg: #000000;
+            --surface: #1c1c1e;
+            --text: #ffffff;
+            --text-secondary: #8e8e93;
+            --border: #38383a;
+            --input-bg: #1c1c1e;
+            --card-bg: #1c1c1e;
+            --header-bg: rgba(0,0,0,0.96);
+            --status-bg: #2c2c2e;
+        }
+
+        body {
+            background: var(--bg);
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, Helvetica, sans-serif;
+            padding: 0;
+            margin: 0;
+            color: var(--text);
+        }
+
+        /* ШАПКА КАК В iOS */
+        .status-bar {
+            background: var(--header-bg);
+            padding: 12px 16px 8px 16px;
+            font-size: 14px;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 0.5px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+
+        .header {
+            background: var(--header-bg);
+            padding: 8px 16px 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 0.5px solid var(--border);
+            position: sticky;
+            top: 44px;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+
+        .logo h1 {
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #007aff, #5856d6);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .logo p {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        .header-buttons {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .theme-toggle {
+            background: var(--status-bg);
+            border: none;
+            border-radius: 30px;
+            padding: 8px 12px;
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+        .logout-btn {
+            background: #ff3b30;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 30px;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        /* ПРОФИЛЬ ПОЛЬЗОВАТЕЛЯ */
+        .profile-card {
+            background: var(--surface);
+            margin: 16px;
+            padding: 16px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .avatar {
+            width: 52px;
+            height: 52px;
+            background: linear-gradient(135deg, #007aff, #5856d6);
+            border-radius: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: white;
+        }
+
+        .profile-info {
+            flex: 1;
+        }
+
+        .profile-name {
+            font-size: 17px;
+            font-weight: 600;
+        }
+
+        .profile-role {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        .role-tag {
+            background: #34c759;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        /* ФОРМА СОЗДАНИЯ ЗАЯВКИ */
+        .form-container {
+            background: var(--surface);
+            margin: 16px;
+            padding: 20px;
+            border-radius: 20px;
+        }
+
+        .form-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 14px 16px;
+            border: 0.5px solid var(--border);
+            border-radius: 14px;
+            font-size: 16px;
+            background: var(--input-bg);
+            color: var(--text);
+            font-family: inherit;
+        }
+
+        .form-group textarea {
+            resize: none;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #007aff;
+        }
+
+        .submit-btn {
+            background: #007aff;
+            color: white;
+            border: none;
+            padding: 16px;
+            border-radius: 14px;
+            font-size: 17px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        /* СЕКЦИЯ ЗАЯВОК */
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            padding: 16px 16px 8px 16px;
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .ticket-count {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        /* КАРТОЧКА ЗАЯВКИ (как в iOS) */
+        .ticket {
+            background: var(--surface);
+            margin: 8px 16px;
+            padding: 16px;
+            border-radius: 14px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            transition: 0.2s;
+        }
+
+        .ticket-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+
+        .ticket-title-section {
+            flex: 1;
+        }
+
+        .ticket-title {
+            font-size: 17px;
+            font-weight: 600;
+        }
+
+        .ticket-id {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .status-Отправлена { background: #ff9f0a20; color: #ff9f0a; }
+        .status-Принята { background: #007aff20; color: #007aff; }
+        .status-Выполнена { background: #34c75920; color: #34c759; }
+        .status-Отказана { background: #ff3b3020; color: #ff3b30; }
+
+        .ticket-meta {
+            display: flex;
+            gap: 16px;
+            margin: 8px 0;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .ticket-desc {
+            background: var(--input-bg);
+            padding: 12px;
+            border-radius: 12px;
+            font-size: 14px;
+            margin: 8px 0;
+            line-height: 1.4;
+        }
+
+        .assigned-info {
+            font-size: 13px;
+            padding: 8px 12px;
+            border-radius: 12px;
+            margin: 8px 0;
+            display: inline-block;
+        }
+
+        .assigned-accepted { background: #007aff10; color: #007aff; }
+        .assigned-completed { background: #34c75910; color: #34c759; }
+        .assigned-rejected { background: #ff3b3010; color: #ff3b30; }
+
+        /* КНОПКИ ДЕЙСТВИЙ */
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .action-btn {
+            flex: 1;
+            padding: 12px;
+            border-radius: 14px;
+            text-align: center;
+            text-decoration: none;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn-accept { background: #007aff; color: white; }
+        .btn-complete { background: #34c759; color: white; }
+        .btn-reject { background: #ff3b30; color: white; }
+        .btn-delete { background: #8e8e93; color: white; }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+
+        .empty-icon {
+            font-size: 60px;
+            margin-bottom: 16px;
+            opacity: 0.6;
+        }
+
+        /* НИЖНЯЯ НАВИГАЦИЯ (как в iOS) */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--surface);
+            display: flex;
+            justify-content: space-around;
+            padding: 8px 20px 20px 20px;
+            border-top: 0.5px solid var(--border);
+            backdrop-filter: blur(10px);
+            background: var(--surface);
+        }
+
+        .nav-item {
+            text-align: center;
+            padding: 8px 0;
+            flex: 1;
+            color: var(--text-secondary);
+            font-size: 10px;
+            cursor: pointer;
+            background: none;
+            border: none;
+            transition: 0.2s;
+        }
+
+        .nav-item.active {
+            color: #007aff;
+        }
+
+        .nav-icon {
+            font-size: 24px;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        /* отступ снизу для навигации */
+        .content-padding {
+            padding-bottom: 80px;
+        }
+    </style>
+</head>
+<body>
+    <!-- СТАТУС БАР (как в телефоне) -->
+    <div class="status-bar">
+        <span>9:41</span>
+        <span>📶 🔋 100%</span>
+    </div>
+
+    <!-- ШАПКА -->
+    <div class="header">
+        <div class="logo">
+            <h1>IT Helpdesk</h1>
+            <p>ООО «МАГНАТ»</p>
+        </div>
+        <div class="header-buttons">
+            <button class="theme-toggle" onclick="toggleTheme()">🌓</button>
+            <a href="/logout" class="logout-btn">Выйти</a>
+        </div>
+    </div>
+
+    <!-- ПРОФИЛЬ ПОЛЬЗОВАТЕЛЯ -->
+    <div class="profile-card">
+        <div class="avatar">
+            {% if role == 'employee' %}👨‍💼{% else %}🛠️{% endif %}
+        </div>
+        <div class="profile-info">
+            <div class="profile-name">{{ username }}</div>
+            <div class="profile-role">
+                {% if role == 'employee' %}Сотрудник{% else %}IT-специалист{% endif %}
+            </div>
+        </div>
+        <div class="role-tag">
+            {% if role == 'employee' %}Сотрудник{% else %}IT{% endif %}
+        </div>
+    </div>
+
+    <div class="content-padding">
+        <!-- ФОРМА СОЗДАНИЯ (только для сотрудника) -->
+        <div id="createSection" class="{% if role != 'employee' %}hidden{% endif %}">
+            <div class="form-container">
+                <div class="form-title">✏️ Новая заявка</div>
+                <form method="POST" action="/add_ticket">
+                    <div class="form-group">
+                        <input type="text" name="title" placeholder="Тема заявки" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="text" name="location" placeholder="📍 Кабинет">
+                    </div>
+                    <div class="form-group">
+                        <textarea name="description" rows="3" placeholder="Опишите проблему..." required></textarea>
+                    </div>
+                    <button type="submit" class="submit-btn">📨 Отправить</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- СПИСОК ЗАЯВОК -->
+        <div id="ticketsList">
+            <div class="section-header">
+                <div class="section-title">Заявки</div>
+                <div class="ticket-count">{{ tickets|length }} шт.</div>
+            </div>
+
+            {% for ticket in tickets %}
+            <div class="ticket">
+                <div class="ticket-header">
+                    <div class="ticket-title-section">
+                        <div class="ticket-title">{{ ticket.title }}</div>
+                        <div class="ticket-id">№{{ ticket.id }}</div>
+                    </div>
+                    <div class="status-badge status-{{ ticket.status }}">{{ ticket.status }}</div>
+                </div>
+
+                <div class="ticket-meta">
+                    <span>👤 {{ ticket.created_by }}</span>
+                    <span>📍 {{ ticket.location or '—' }}</span>
+                    <span>🕒 {{ ticket.created_at[5:16] }}</span>
+                </div>
+
+                <div class="ticket-desc">
+                    {{ ticket.description }}
+                </div>
+
+                {% if ticket.accepted_by %}
+                    {% if ticket.status == 'Принята' %}
+                        <div class="assigned-info assigned-accepted">🔧 Принял: {{ ticket.accepted_by }}</div>
+                    {% elif ticket.status == 'Выполнена' %}
+                        <div class="assigned-info assigned-completed">✅ Выполнил: {{ ticket.accepted_by }}</div>
+                    {% elif ticket.status == 'Отказана' %}
+                        <div class="assigned-info assigned-rejected">❌ Отказал: {{ ticket.accepted_by }}</div>
+                    {% endif %}
+                {% endif %}
+
+                <div class="action-buttons">
+                    {% if role == 'it_specialist' %}
+                        {% if ticket.status == 'Отправлена' %}
+                            <a href="/accept/{{ ticket.id }}" class="action-btn btn-accept">✅ Принять</a>
+                            <a href="/reject/{{ ticket.id }}" class="action-btn btn-reject">❌ Отказать</a>
+                        {% elif ticket.status == 'Принята' %}
+                            <a href="/complete/{{ ticket.id }}" class="action-btn btn-complete">✔️ Выполнить</a>
+                            <a href="/reject/{{ ticket.id }}" class="action-btn btn-reject">❌ Отказать</a>
+                        {% endif %}
+                        <a href="/delete/{{ ticket.id }}" class="action-btn btn-delete" onclick="return confirm('Удалить?')">🗑️</a>
+                    {% endif %}
+
+                    {% if role == 'employee' and ticket.status == 'Отправлена' %}
+                        <a href="/delete/{{ ticket.id }}" class="action-btn btn-delete" onclick="return confirm('Удалить?')">🗑️ Удалить</a>
+                    {% endif %}
+                </div>
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-icon">📭</div>
+                <div>Нет заявок</div>
+                <div style="font-size: 13px; margin-top: 8px;">Создайте первую заявку</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- НИЖНЯЯ НАВИГАЦИЯ -->
+    <div class="bottom-nav">
+        <button class="nav-item active" onclick="showTab('tickets')">
+            <span class="nav-icon">📋</span>
+            <span>Заявки</span>
+        </button>
+        {% if role == 'employee' %}
+        <button class="nav-item" onclick="showTab('create')">
+            <span class="nav-icon">➕</span>
+            <span>Создать</span>
+        </button>
+        {% endif %}
+    </div>
+
+    <script>
+        function toggleTheme() {
+            document.body.classList.toggle('dark');
+            localStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light');
+        }
+
+        if (localStorage.getItem('theme') === 'dark') {
+            document.body.classList.add('dark');
+        }
+
+        function showTab(tab) {
+            const createSection = document.getElementById('createSection');
+            const ticketsList = document.getElementById('ticketsList');
+            const sectionHeader = document.querySelector('.section-header');
+            
+            if (tab === 'create') {
+                createSection.classList.remove('hidden');
+                ticketsList.classList.add('hidden');
+                if (sectionHeader) sectionHeader.classList.add('hidden');
+                document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
+                event.target.closest('.nav-item').classList.add('active');
+            } else {
+                createSection.classList.add('hidden');
+                ticketsList.classList.remove('hidden');
+                if (sectionHeader) sectionHeader.classList.remove('hidden');
+                document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
+                document.querySelectorAll('.nav-item')[0].classList.add('active');
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>IT Helpdesk — Заявки</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #f2f2f7;
+            --bg-secondary: #ffffff;
+            --bg-card: #ffffff;
+            --text-primary: #000000;
+            --text-secondary: #6c6c70;
+            --accent-primary: #007aff;
+            --border-color: #c6c6c8;
+            --input-bg: #f2f2f7;
+            --shadow: 0 2px 8px rgba(0,0,0,0.05);
+            --status-open-bg: #fff3e0;
+            --status-open-text: #cc7b00;
+            --status-open-border: #ff9500;
+            --status-progress-bg: #e3f2fd;
+            --status-progress-text: #0066cc;
+            --status-progress-border: #007aff;
+            --status-closed-bg: #e8f5e9;
+            --status-closed-text: #2e7d32;
+            --status-closed-border: #34c759;
+            --status-rejected-bg: #ffebee;
+            --status-rejected-text: #c62828;
+            --status-rejected-border: #ff3b30;
+        }
+
+        body.dark {
+            --bg-primary: #000000;
+            --bg-secondary: #1c1c1e;
+            --bg-card: #1c1c1e;
+            --text-primary: #ffffff;
+            --text-secondary: #8e8e93;
+            --accent-primary: #0a84ff;
+            --border-color: #38383a;
+            --input-bg: #1c1c1e;
+            --shadow: 0 2px 8px rgba(0,0,0,0.3);
+            --status-open-bg: #3d2a1a;
+            --status-open-text: #ff9f0a;
+            --status-open-border: #ff9f0a;
+            --status-progress-bg: #1a3a5c;
+            --status-progress-text: #5dade2;
+            --status-progress-border: #0a84ff;
+            --status-closed-bg: #1a3a2a;
+            --status-closed-text: #30d158;
+            --status-closed-border: #30d158;
+            --status-rejected-bg: #3d1a1a;
+            --status-rejected-text: #ff6b6b;
+            --status-rejected-border: #ff453a;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            transition: background 0.3s, color 0.3s;
+        }
+
+        .navbar {
+            background: var(--bg-secondary);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-container {
+            max-width: 800px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo h1 {
+            font-size: 1.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .logo p {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .nav-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 30px;
+            transition: all 0.3s;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            background: var(--input-bg);
+            color: var(--accent-primary);
+        }
+
+        .logout-btn {
+            background: rgba(255, 69, 58, 0.2);
+            color: #ff453a;
+            padding: 0.5rem 1rem;
+            border-radius: 30px;
+            text-decoration: none;
+            font-size: 0.85rem;
+        }
+
+        .main-content {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 1.5rem;
+            padding-bottom: 100px;
+        }
+
+        .form-card {
+            background: var(--bg-card);
+            border-radius: 24px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow);
+        }
+
+        .form-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            margin-bottom: 0.8rem;
+            background: var(--input-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            color: var(--text-primary);
+            font-family: inherit;
+        }
+
+        .submit-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+            padding: 0.8rem;
+            border-radius: 20px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .ticket-card {
+            background: var(--bg-card);
+            border-radius: 20px;
+            padding: 1.2rem;
+            margin-bottom: 1rem;
+            border: 1px solid var(--border-color);
+            transition: all 0.2s;
+            box-shadow: var(--shadow);
+        }
+
+        .ticket-card:hover {
+            transform: translateY(-2px);
+            border-color: var(--accent-primary);
+        }
+
+        .ticket-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.8rem;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .ticket-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .ticket-id {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+        }
+
+        .status-badge {
+            padding: 0.35rem 0.9rem;
+            border-radius: 30px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            border: 1px solid;
+        }
+
+        .status-open {
+            background: var(--status-open-bg);
+            color: var(--status-open-text);
+            border-color: var(--status-open-border);
+        }
+
+        .status-in_progress {
+            background: var(--status-progress-bg);
+            color: var(--status-progress-text);
+            border-color: var(--status-progress-border);
+        }
+
+        .status-closed {
+            background: var(--status-closed-bg);
+            color: var(--status-closed-text);
+            border-color: var(--status-closed-border);
+        }
+
+        .status-rejected {
+            background: var(--status-rejected-bg);
+            color: var(--status-rejected-text);
+            border-color: var(--status-rejected-border);
+        }
+
+        .ticket-meta {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.8rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .ticket-desc {
+            background: var(--input-bg);
+            padding: 0.8rem;
+            border-radius: 14px;
+            font-size: 0.85rem;
+            margin-bottom: 1rem;
+            line-height: 1.4;
+        }
+
+        .assigned-info {
+            font-size: 0.75rem;
+            padding: 0.4rem 0.8rem;
+            border-radius: 12px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 0.8rem;
+        }
+
+        .assigned-accepted { background: rgba(10, 132, 255, 0.15); color: #0a84ff; border-left: 3px solid #0a84ff; }
+        .assigned-completed { background: rgba(48, 209, 88, 0.15); color: #30d158; border-left: 3px solid #30d158; }
+        .assigned-rejected { background: rgba(255, 69, 58, 0.15); color: #ff453a; border-left: 3px solid #ff453a; }
+
+        .action-buttons {
+            display: flex;
+            gap: 0.8rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border-radius: 30px;
+            text-decoration: none;
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            flex: 1;
+            text-align: center;
+        }
+
+        .btn-accept { background: #0a84ff; color: white; }
+        .btn-complete { background: #30d158; color: white; }
+        .btn-reject { background: #ff453a; color: white; }
+        .btn-delete { background: #8e8e93; color: white; }
+        .btn-disabled { background: #48484a; color: #8e8e93; cursor: not-allowed; pointer-events: none; }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-secondary);
+        }
+
+        .empty-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .nav-tab {
+            flex: 1;
+            text-align: center;
+            padding: 0.7rem;
+            background: var(--bg-card);
+            border-radius: 30px;
+            cursor: pointer;
+            border: 1px solid var(--border-color);
+            transition: all 0.2s;
+        }
+
+        .nav-tab.active {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-color: transparent;
+            color: white;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+<nav class="navbar">
+    <div class="nav-container">
+        <div class="logo">
+            <h1>IT HELPDESK</h1>
+            <p>ООО «МАГНАТ»</p>
+        </div>
+        <div class="nav-links">
+            <a href="/tickets" class="nav-link active">📋 Заявки</a>
+            <a href="/profile" class="nav-link">👤 Профиль</a>
+            <a href="/logout" class="logout-btn">Выйти</a>
+        </div>
+    </div>
+</nav>
+
+<main class="main-content">
+    <div class="nav-buttons">
+        <div class="nav-tab active" onclick="showTab('tickets')">📋 Заявки</div>
+        {% if role == 'employee' or role == 'admin' %}
+        <div class="nav-tab" onclick="showTab('create')">➕ Создать</div>
+        {% endif %}
+    </div>
+
+    <div id="createSection" class="hidden">
+        <div class="form-card">
+            <div class="form-title">✏️ Новая заявка</div>
+            <form method="POST" action="/add_ticket">
+                <input type="text" name="title" placeholder="Тема заявки" required>
+                <input type="text" name="location" placeholder="📍 Кабинет / Место">
+                <select name="category">
+                    <option>Техническая</option>
+                    <option>Программное обеспечение</option>
+                    <option>Оборудование</option>
+                    <option>Сеть</option>
+                    <option>Доступы</option>
+                </select>
+                <select name="priority">
+                    <option>Низкий</option>
+                    <option selected>Средний</option>
+                    <option>Высокий</option>
+                </select>
+                <textarea name="description" rows="3" placeholder="Опишите проблему..." required></textarea>
+                <button type="submit" class="submit-btn">📨 Отправить заявку</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="ticketsSection">
+        {% for ticket in tickets %}
+        <div class="ticket-card">
+            <div class="ticket-header">
+                <div>
+                    <div class="ticket-title">{{ ticket.title }}</div>
+                    <div class="ticket-id">№{{ ticket.id }}</div>
+                </div>
+                <div class="status-badge status-{{ ticket.status }}">
+                    {% if ticket.status == 'open' %}
+                        📋 Открыта
+                    {% elif ticket.status == 'in_progress' %}
+                        🔄 В работе
+                    {% elif ticket.status == 'closed' %}
+                        ✅ Выполнена
+                    {% else %}
+                        ❌ Отказана
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="ticket-meta">
+                <span>
+                    <img src="/static/avatars/{{ ticket.created_by_avatar or 'emp_avatar1.png' }}" style="width: 20px; height: 20px; border-radius: 10px; object-fit: cover; vertical-align: middle; margin-right: 4px;" onerror="this.style.display='none'">
+                    👤 {{ ticket.created_by_name or ticket.created_by }}
+                </span>
+                <span>📍 {{ ticket.location or '—' }}</span>
+                <span>📁 {{ ticket.category or 'Техническая' }}</span>
+                <span>⚡ {{ ticket.priority or 'Средний' }}</span>
+                <span>🕒 {{ ticket.created_at[:16] if ticket.created_at else '' }}</span>
+            </div>
+
+            <div class="ticket-desc">
+                {{ ticket.description }}
+            </div>
+
+            {% if ticket.accepted_by %}
+                {% if ticket.status == 'in_progress' %}
+                    <div class="assigned-info assigned-accepted">
+                        <img src="/static/avatars/{{ ticket.accepted_by_avatar or 'it_avatar1.png' }}" style="width: 18px; height: 18px; border-radius: 9px; object-fit: cover; vertical-align: middle; margin-right: 4px;" onerror="this.style.display='none'">
+                        🔧 Взял в работу: {{ ticket.accepted_by_name or ticket.accepted_by }}
+                    </div>
+                {% elif ticket.status == 'closed' %}
+                    <div class="assigned-info assigned-completed">
+                        <img src="/static/avatars/{{ ticket.accepted_by_avatar or 'it_avatar1.png' }}" style="width: 18px; height: 18px; border-radius: 9px; object-fit: cover; vertical-align: middle; margin-right: 4px;" onerror="this.style.display='none'">
+                        ✅ Выполнил: {{ ticket.accepted_by_name or ticket.accepted_by }}
+                    </div>
+                {% elif ticket.status == 'rejected' %}
+                    <div class="assigned-info assigned-rejected">
+                        <img src="/static/avatars/{{ ticket.accepted_by_avatar or 'it_avatar1.png' }}" style="width: 18px; height: 18px; border-radius: 9px; object-fit: cover; vertical-align: middle; margin-right: 4px;" onerror="this.style.display='none'">
+                        ❌ Отказал: {{ ticket.accepted_by_name or ticket.accepted_by }}
+                    </div>
+                {% endif %}
+            {% endif %}
+
+            <div class="action-buttons">
+                {% if role == 'it_specialist' or role == 'admin' %}
+                    {% if ticket.status == 'open' %}
+                        <a href="/take/{{ ticket.id }}" class="btn btn-accept">🔧 Взять в работу</a>
+                        <a href="/reject/{{ ticket.id }}" class="btn btn-reject">❌ Отказать</a>
+                        <a href="/delete/{{ ticket.id }}" class="btn btn-delete" onclick="return confirm('Удалить заявку?')">🗑️ Удалить</a>
+                    {% elif ticket.status == 'in_progress' %}
+                        {% if ticket.accepted_by == username %}
+                            <a href="/complete/{{ ticket.id }}" class="btn btn-complete">✔️ Выполнить</a>
+                            <a href="/reject/{{ ticket.id }}" class="btn btn-reject">❌ Отказать</a>
+                            <a href="/delete/{{ ticket.id }}" class="btn btn-delete" onclick="return confirm('Удалить заявку?')">🗑️ Удалить</a>
+                        {% else %}
+                            <div class="btn btn-disabled">🔒 Занято: {{ ticket.accepted_by_name or ticket.accepted_by }}</div>
+                        {% endif %}
+                    {% elif ticket.status == 'closed' %}
+                        <div class="btn btn-disabled">✅ Выполнена</div>
+                        <a href="/delete/{{ ticket.id }}" class="btn btn-delete" onclick="return confirm('Удалить заявку?')">🗑️ Удалить</a>
+                    {% elif ticket.status == 'rejected' %}
+                        <div class="btn btn-disabled">❌ Отказана</div>
+                        <a href="/delete/{{ ticket.id }}" class="btn btn-delete" onclick="return confirm('Удалить заявку?')">🗑️ Удалить</a>
+                    {% endif %}
+                {% elif role == 'employee' %}
+                    {% if ticket.created_by == username and ticket.status == 'open' %}
+                        <a href="/delete/{{ ticket.id }}" class="btn btn-delete" onclick="return confirm('Удалить заявку?')">🗑️ Удалить</a>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">📭</div>
+            <div>Нет заявок</div>
+            <div style="font-size: 0.8rem; margin-top: 0.5rem;">Создайте первую заявку</div>
+        </div>
+        {% endfor %}
+    </div>
+</main>
+
+<script>
+    // Загрузка сохраненной темы из localStorage
+    if (localStorage.getItem('theme') === 'dark') {
+        document.body.classList.add('dark');
+    }
+
+    function showTab(tab) {
+        const createSection = document.getElementById('createSection');
+        const ticketsSection = document.getElementById('ticketsSection');
+        const tabs = document.querySelectorAll('.nav-tab');
+        
+        if (tab === 'create') {
+            createSection.classList.remove('hidden');
+            ticketsSection.classList.add('hidden');
+            tabs[0].classList.remove('active');
+            tabs[1].classList.add('active');
+        } else {
+            createSection.classList.add('hidden');
+            ticketsSection.classList.remove('hidden');
+            tabs[0].classList.add('active');
+            tabs[1].classList.remove('active');
+        }
+    }
+</script>
+</body>
+</html>
